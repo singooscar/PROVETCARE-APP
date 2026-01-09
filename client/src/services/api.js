@@ -1,8 +1,11 @@
 import axios from 'axios';
 
 // Configurar la base URL del API
+const apiUrl = import.meta.env.VITE_API_URL || '/api';
+console.log('🔌 Vercel detectó esta URL de API:', apiUrl);
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || '/api',
+    baseURL: apiUrl,
     headers: {
         'Content-Type': 'application/json',
     },
