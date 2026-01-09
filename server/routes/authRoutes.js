@@ -1,0 +1,27 @@
+import express from 'express';
+import {
+    register,
+    login,
+    verifyToken,
+    getProfile,
+    registerAdmin,
+    generateInvitationCode
+} from '../controllers/authController.js';
+import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
+import { validateRegistration, validateAdminRegistration, validateLogin } from '../middleware/validators.js';
+
+const router = express.Router();
+
+// Rutas públicas
+router.post('/register', validateRegistration, register);
+router.post('/register-admin', validateAdminRegistration, registerAdmin);
+router.post('/login', validateLogin, login);
+
+// Rutas protegidas
+router.get('/verify', authenticateToken, verifyToken);
+router.get('/profile', authenticateToken, getProfile);
+
+// Rutas solo para administradores
+router.post('/invitation-codes', authenticateToken, requireAdmin, generateInvitationCode);
+
+export default router;

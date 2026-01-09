@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>ProVetCare - Base de Datos</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+
+        h1 {
+            color: #2c3e50;
+        }
+
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        th {
+            background: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .true {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .false {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .timestamp {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📁 ProVetCare - Vista de Datos</h1>
+    <div class="timestamp">Generado: 8/1/2026, 7:57:24 p.m.</div>
+    <h2>👤 Usuarios (14)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>FULL_NAME</th>
+                <th>EMAIL</th>
+                <th>ROLE</th>
+                <th>PHONE</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>20</td>
+                <td>asdasdasd</td>
+                <td>asdasdasd@gmail.com</td>
+                <td>admin</td>
+                <td>12312312312</td>
+            </tr>
+            <tr>
+                <td>19</td>
+                <td>Veronica Alarcon</td>
+                <td>vero_test@gmail.com</td>
+                <td>admin</td>
+                <td>+592961771991</td>
+            </tr>
+            <tr>
+                <td>18</td>
+                <td>Oscar Singo Prueba uno</td>
+                <td>oscarsingo2004@gmail.com</td>
+                <td>client</td>
+                <td>+593961771991</td>
+            </tr>
+            <tr>
+                <td>17</td>
+                <td>Cliente de Prueba</td>
+                <td>cliente@example.com</td>
+                <td>client</td>
+                <td>555-0001</td>
+            </tr>
+            <tr>
+                <td>16</td>
+                <td>Administrador PROVETCARE</td>
+                <td>admin@provetcare.com</td>
+                <td>admin</td>
+                <td>555-ADMIN</td>
+            </tr>
+            <tr>
+                <td>12</td>
+                <td>Dr Juan Perez</td>
+                <td>juanperez@gmail.com</td>
+                <td>admin</td>
+                <td>+593961771991</td>
+            </tr>
+            <tr>
+                <td>11</td>
+                <td>Dr Carlos Veterinario</td>
+                <td>dr.carlos@provetcare.com</td>
+                <td>admin</td>
+                <td>+51987654321</td>
+            </tr>
+            <tr>
+                <td>10</td>
+                <td>Test Duplicado</td>
+                <td>dr.juan@provetcare.com</td>
+                <td>admin</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>9</td>
+                <td>Test XSS</td>
+                <td>xss@test.com</td>
+                <td>client</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>8</td>
+                <td>Usuario Prueba</td>
+                <td>prueba.security@test.com</td>
+                <td>client</td>
+                <td>+51999888777</td>
+            </tr>
+            <tr>
+                <td>7</td>
+                <td>Oscar</td>
+                <td>oscarsingo@gmail.com</td>
+                <td>client</td>
+                <td>2411567</td>
+            </tr>
+            <tr>
+                <td>6</td>
+                <td>Oscar Singo</td>
+                <td>oscar@provetcare.com</td>
+                <td>client</td>
+                <td>555-9999</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td>Oscar</td>
+                <td>oscar@gmail.com</td>
+                <td>client</td>
+                <td>2411567</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td>Test User</td>
+                <td>test@test.com</td>
+                <td>client</td>
+                <td>123456789</td>
+            </tr>
+        </tbody>
+    </table>
+    <h2>🐾 Mascotas (5)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>NAME</th>
+                <th>SPECIES</th>
+                <th>OWNER</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>4</td>
+                <td>Firulais</td>
+                <td>Perro</td>
+                <td>oscar@provetcare.com</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td>Michi</td>
+                <td>Gato</td>
+                <td>oscar@provetcare.com</td>
+            </tr>
+            <tr>
+                <td>10</td>
+                <td>Max</td>
+                <td>Perro</td>
+                <td>cliente@example.com</td>
+            </tr>
+            <tr>
+                <td>11</td>
+                <td>Benito</td>
+                <td>Conejo</td>
+                <td>oscarsingo@gmail.com</td>
+            </tr>
+            <tr>
+                <td>12</td>
+                <td>Dalton</td>
+                <td>Gato</td>
+                <td>oscarsingo2004@gmail.com</td>
+            </tr>
+        </tbody>
+    </table>
+    <h2>🔑 Códigos de Invitación (4)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>CODE</th>
+                <th>IS_USED</th>
+                <th>EXPIRES_AT</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>bootstrap-admin-2026-provetcare</td>
+                <td><span class="badge true">true</span></td>
+                <td>Sat Feb 07 2026 17:41:10 GMT-0500 (hora estándar de Colombia)</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>test-veterinario-2026-manual</td>
+                <td><span class="badge true">true</span></td>
+                <td>Thu Jan 15 2026 17:50:33 GMT-0500 (hora estándar de Colombia)</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td>mi-codigo-vet-2026</td>
+                <td><span class="badge true">true</span></td>
+                <td>Thu Jan 15 2026 18:13:40 GMT-0500 (hora estándar de Colombia)</td>
+            </tr>
+            <tr>
+                <td>6</td>
+                <td>VET2026</td>
+                <td><span class="badge true">true</span></td>
+                <td>Thu Jan 15 2026 19:43:51 GMT-0500 (hora estándar de Colombia)</td>
+            </tr>
+        </tbody>
+    </table>
+    <h2>📅 Citas (7)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>PET</th>
+                <th>CLIENT</th>
+                <th>STATUS</th>
+                <th>SERVICE_TYPE</th>
+                <th>APPOINTMENT_DATE</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>6</td>
+                <td>Max</td>
+                <td>Cliente de Prueba</td>
+                <td>confirmed</td>
+                <td>Control Post-Operatorio</td>
+                <td>Sun Jan 25 2026 00:00:00 GMT-0500 (hora estándar de Colombia)</td>
+            </tr>
+            <tr>
+                <td>9</td>
+                <td>Max</td>
+                <td>Cliente de Prueba</td>
+                <td>requested</td>
+                <td>Consulta General</td>
+                <td>Tue Jan 20 2026 00:00:00 GMT-0500 (hora estándar de Colombia)</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td>Max</td>
+                <td>Cliente de Prueba</td>
+                <td>confirmed</td>
+                <td>Consulta General</td>
+                <td>Tue Jan 20 2026 00:00:00 GMT-0500 (hora estándar de Colombia)</td>
+            </tr>
+            <tr>
+                <td>7</td>
+                <td>Max</td>
+                <td>Cliente de Prueba</td>
+                <td>requested</td>
+                <td>Consulta General</td>
+                <td>Tue Jan 20 2026 00:00:00 GMT-0500 (hora estándar de Colombia)</td>
+            </tr>
+            <tr>
+                <td>8</td>
+                <td>Benito</td>
+                <td>Oscar</td>
+                <td>confirmed</td>
+                <td>Consulta General</td>
+                <td>Fri Jan 09 2026 00:00:00 GMT-0500 (hora estándar de Colombia)</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td>Firulais</td>
+                <td>Oscar Singo</td>
+                <td>requested</td>
+                <td>Vacunación</td>
+                <td>Fri Jan 09 2026 00:00:00 GMT-0500 (hora estándar de Colombia)</td>
+            </tr>
+            <tr>
+                <td>10</td>
+                <td>Dalton</td>
+                <td>Oscar Singo Prueba uno</td>
+                <td>confirmed</td>
+                <td>Consulta General</td>
+                <td>Thu Jan 08 2026 00:00:00 GMT-0500 (hora estándar de Colombia)</td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+
+</html>
