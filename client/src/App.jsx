@@ -10,10 +10,13 @@ import Calendar from './pages/Calendar';
 import Pets from './pages/Pets';
 import Chat from './pages/Chat';
 
+import LandingPage from './pages/LandingPage';
+
 function App() {
     return (
         <Routes>
             {/* Public Routes */}
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register-vet" element={<RegisterVet />} />
 
@@ -65,9 +68,6 @@ function App() {
                     </ProtectedRoute>
                 }
             />
-
-            {/* Redirect */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
     );
 }
