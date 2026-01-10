@@ -69,11 +69,16 @@ const registrationSchema = z.object({
         ),
 
     phone: z
-        .string()
-        .trim()
-        .regex(PHONE_REGEX, 'Formato de teléfono inválido (use formato internacional +123456789)')
+        .union([
+            z.string()
+                .trim()
+                .regex(PHONE_REGEX, 'Formato de teléfono inválido (use formato internacional +123456789)')
+                .min(1),
+            z.literal(''),
+            z.undefined()
+        ])
         .optional()
-        .or(z.literal('')) // Allow empty string
+        .transform(val => val === '' ? undefined : val)
 });
 
 // ============================================================================
@@ -116,11 +121,16 @@ const registerAdminSchema = z.object({
         ),
 
     phone: z
-        .string()
-        .trim()
-        .regex(PHONE_REGEX, 'Formato de teléfono inválido (use formato internacional +123456789)')
+        .union([
+            z.string()
+                .trim()
+                .regex(PHONE_REGEX, 'Formato de teléfono inválido (use formato internacional +123456789)')
+                .min(1),
+            z.literal(''),
+            z.undefined()
+        ])
         .optional()
-        .or(z.literal('')),
+        .transform(val => val === '' ? undefined : val),
 
     // NEW: Invitation code required for admin registration
     invitationCode: z
