@@ -13,7 +13,8 @@ import { validateRegistration, validateAdminRegistration, validateLogin } from '
 const router = express.Router();
 
 // Rutas públicas
-router.post('/register', validateRegistration, register);
+// TEMPORARY: Zod validation disabled due to internal bug - validation moved to controller
+router.post('/register', register);
 router.post('/register-admin', validateAdminRegistration, registerAdmin);
 router.post('/login', validateLogin, login);
 
