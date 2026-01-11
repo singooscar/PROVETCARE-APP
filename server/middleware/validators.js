@@ -68,17 +68,16 @@ const registrationSchema = z.object({
             'La contraseña debe contener al menos: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial (!@#$%^&*...)'
         ),
 
-    phone: z
-        .union([
-            z.string()
-                .trim()
-                .regex(PHONE_REGEX, 'Formato de teléfono inválido (use formato internacional +123456789)')
-                .min(1),
-            z.literal(''),
-            z.undefined()
-        ])
-        .optional()
-        .transform(val => val === '' ? undefined : val)
+    phone: z.preprocess(
+        (val) => {
+            // Convert empty string to undefined
+            if (val === '' || val === null) return undefined;
+            return val;
+        },
+        z.string()
+            .regex(PHONE_REGEX, 'Formato de teléfono inválido (use formato internacional +123456789)')
+            .optional()
+    )
 });
 
 // ============================================================================
@@ -120,17 +119,15 @@ const registerAdminSchema = z.object({
             'La contraseña debe contener al menos: 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial (!@#$%^&*...)'
         ),
 
-    phone: z
-        .union([
-            z.string()
-                .trim()
-                .regex(PHONE_REGEX, 'Formato de teléfono inválido (use formato internacional +123456789)')
-                .min(1),
-            z.literal(''),
-            z.undefined()
-        ])
-        .optional()
-        .transform(val => val === '' ? undefined : val),
+    phone: z.preprocess(
+        (val) => {
+            if (val === '' || val === null) return undefined;
+            return val;
+        },
+        z.string()
+            .regex(PHONE_REGEX, 'Formato de teléfono inválido (use formato internacional +123456789)')
+            .optional()
+    ),
 
     // NEW: Invitation code required for admin registration
     invitationCode: z
