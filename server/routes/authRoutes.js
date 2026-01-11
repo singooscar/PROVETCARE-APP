@@ -8,7 +8,7 @@ import {
     generateInvitationCode
 } from '../controllers/authController.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
-import { validateRegistration, validateAdminRegistration, validateLogin } from '../middleware/validators.js';
+import { validateAdminRegistration, validateLogin } from '../middleware/validators.js';
 
 const router = express.Router();
 

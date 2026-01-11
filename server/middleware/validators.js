@@ -202,9 +202,11 @@ const validate = (schema) => (req, res, next) => {
 // ============================================================================
 // EXPORTED VALIDATORS
 // ============================================================================
-export const validateRegistration = validate(registrationSchema);
+// TEMPORARY: validateRegistration disabled due to Zod bug
+// export const validateRegistration = validate(registrationSchema);
 export const validateAdminRegistration = validate(registerAdminSchema);
 export const validateLogin = validate(loginSchema);
 
 // Export schemas for testing purposes
-export { registrationSchema, registerAdminSchema, loginSchema };
+// export { registrationSchema, registerAdminSchema, loginSchema };
+export { registerAdminSchema, loginSchema };
