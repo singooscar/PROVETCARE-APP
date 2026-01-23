@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlusCircle, Edit, Trash2, Heart, Activity } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Heart, Activity, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 
@@ -197,6 +197,15 @@ export default function Pets() {
                                             <span className="capitalize">{pet.gender}</span>
                                         </div>
                                     </div>
+
+                                    {/* Botón de Historial Médico */}
+                                    <button
+                                        onClick={() => navigate(`/medical-history/${pet.id}`)}
+                                        className="btn bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white w-full mb-3 flex items-center justify-center gap-2 shadow-md"
+                                    >
+                                        <FileText size={16} />
+                                        Ver Historial Médico
+                                    </button>
 
                                     {/* Acciones */}
                                     <div className="flex gap-2">

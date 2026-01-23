@@ -373,7 +373,78 @@ class NotificationService {
     }
 
     // =========================================================================
-    // ORQUESTADOR PRINCIPAL - Event-Driven Dispatcher
+    // EVENTO: PRESCRIPTION_ISSUED (Receta Médica Generada)
+    // =========================================================================
+    static async sendPrescriptionEmail(prescription, client, pdfPath) {
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: #8b5cf6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                    .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
+                    .status { display: inline-block; padding: 8px 16px; background: #c4b5fd; color: #5b21b6; border-radius: 4px; font-weight: bold; }
+                    .details { background: white; padding: 15px; margin: 20px 0; border-left: 4px solid #8b5cf6; }
+                    .important { background: #fef3c7; padding: 15px; border-radius: 4px; margin: 15px 0; }
+                    .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>🐾 PROVETCARE</h1>
+                    </div>
+                    <div class="content">
+                        <h2>💊 Receta Médica Generada</h2>
+                        <p>Hola <strong>${client.full_name}</strong>,</p>
+                        <p>El veterinario ha generado una receta médica para tu mascota <strong>${prescription.petName}</strong>.</p>
+                        
+                        <div class="details">
+                            <h3>📋 Detalles de la Receta:</h3>
+                            <ul>
+                                <li><strong>Receta #:</strong> ${prescription.id}</li>
+                                <li><strong>Mascota:</strong> ${prescription.petName}</li>
+                                <li><strong>Veterinario:</strong> Dr. ${prescription.vetName}</li>
+                                <li><strong>Fecha:</strong> ${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</li>
+                            </ul>
+                        </div>
+
+                        <p style="text-align: center;">
+                            <span class="status">📄 RECETA ADJUNTA</span>
+                        </p>
+
+                        <div class="important">
+                            <h3>📌 Importante:</h3>
+                            <ul>
+                                <li>Encontrarás el PDF de la receta adjunto a este correo</li>
+                                <li>Sigue las indicaciones del veterinario al pie de la letra</li>
+                                <li>Si tienes dudas, consulta con tu veterinario</li>
+                                <li>Guarda este documento para futuras consultas</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="footer">
+                            <p>PROVETCARE - Sistema de Citas Veterinarias</p>
+                            <p>Este es un correo automático, por favor no responder.</p>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+
+        return await this.sendWithAttachment({
+            to: client.email,
+            subject: '💊 Receta Médica - PROVETCARE',
+            html: htmlContent,
+            attachmentPath: pdfPath
+        });
+    }
+
+    // =========================================================================
+    // ORQUESTADORES PRINCIPALES
     // =========================================================================
     /**
      * Método principal para enviar notificaciones basadas en eventos
@@ -414,6 +485,31 @@ class NotificationService {
     }
 
     /**
+     * Método para notificaciones de recetas médicas
+     * @param {string} event - Tipo de evento (PRESCRIPTION_ISSUED)
+     * @param {object} prescription - Datos de la receta
+     * @param {object} client - Datos del cliente
+     * @param {object} metadata - Metadata (pdfPath)
+     */
+    static async notifyPrescriptionEvent(event, prescription, client, metadata = {}) {
+        try {
+            console.log(`📧 Dispatching prescription notification: ${event}`);
+
+            switch (event) {
+                case 'PRESCRIPTION_ISSUED':
+                    return await this.sendPrescriptionEmail(prescription, client, metadata.pdfPath);
+
+                default:
+                    console.warn(`⚠️ Unknown prescription event: ${event}`);
+                    return null;
+            }
+        } catch (error) {
+            console.error(`❌ Prescription notification failed:`, error.message);
+            return { error: error.message, event };
+        }
+    }
+
+    /**
      * Método base para enviar correos
      */
     static async send({ to, subject, html }) {
@@ -434,6 +530,47 @@ class NotificationService {
             html
         };
 
+        return await this.transporter.sendMail(mailOptions);
+    }
+
+    /**
+     * Método para enviar correos con archivos adjuntos
+     */
+    static async sendWithAttachment({ to, subject, html, attachmentPath }) {
+        if (!this.transporter) {
+            await this.init();
+        }
+
+        // Modo desarrollo - simular envío
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+            console.log(`📧 [EMAIL WITH ATTACHMENT SIMULATED]: ${subject} → ${to}`);
+            console.log(`📎 Attachment: ${attachmentPath}`);
+            return { simulated: true, to, subject, attachment: attachmentPath };
+        }
+
+        // Construir ruta completa del archivo
+        const path = await import('path');
+        const { fileURLToPath } = await import('url');
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+
+        const fullPath = path.join(__dirname, '../..', attachmentPath);
+
+        const mailOptions = {
+            from: `"PROVETCARE 🐾" <${process.env.EMAIL_USER}>`,
+            to,
+            subject,
+            html,
+            attachments: [
+                {
+                    filename: path.basename(attachmentPath),
+                    path: fullPath,
+                    contentType: 'application/pdf'
+                }
+            ]
+        };
+
+        console.log(`📎 Enviando email con PDF adjunto: ${path.basename(attachmentPath)}`);
         return await this.transporter.sendMail(mailOptions);
     }
 }

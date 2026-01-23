@@ -1,0 +1,5 @@
+{
+    "scripts": {
+        "restart": "powershell -ExecutionPolicy Bypass -File ./restart-server.ps1"
+    }
+}

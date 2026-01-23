@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import PrescriptionPanel from '../components/PrescriptionPanel';
+import CheckoutPanel from '../components/CheckoutPanel'; // Nuevo Componente
 import {
     Calendar as CalendarIcon,
     Users,
@@ -14,8 +15,11 @@ import {
     PlusCircle,
     LogOut,
     Search,
-    Filter
+    Filter,
+    FileText,
+    CreditCard
 } from 'lucide-react';
+import EmailModal from '../components/EmailModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -38,6 +42,7 @@ export default function VetDashboard() {
     const [filterStatus, setFilterStatus] = useState('all');
     const [showFollowUpModal, setShowFollowUpModal] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState(null); // Para panel de recetas
+    const [activeTab, setActiveTab] = useState('prescription'); // 'prescription' o 'invoice'
 
     // Formulario de Nueva Cita
     const [formData, setFormData] = useState({
@@ -73,29 +78,97 @@ export default function VetDashboard() {
         }
     };
 
-    const handleStatusChange = async (appointmentId, newStatus, currentStatus) => {
+    // Estados para EmailModal
+    const [showEmailModal, setShowEmailModal] = useState(false);
+    const [emailModalData, setEmailModalData] = useState(null);
+    const [pendingAction, setPendingAction] = useState(null);
+
+    const openEmailModal = (apt, newStatus) => {
+        const clientEmail = apt.client_email; // Asegúrate de que tu backend envíe esto
+        const clientName = apt.client_name || 'Cliente';
+        const petName = apt.pet_name;
+        const dateStr = format(new Date(apt.appointment_date), 'dd MMM yyyy', { locale: es });
+        const timeStr = apt.appointment_time;
+
+        let subject = '';
+        let message = '';
+        let actionType = '';
+
+        if (newStatus === 'confirmed') {
+            subject = `✅ Cita Confirmada - ${petName} - PROVETCARE`;
+            message = `Hola ${clientName},\n\nNos complace confirmar tu cita para ${petName}.\n\n📅 Fecha: ${dateStr}\n⏰ Hora: ${timeStr}\n🏥 Servicio: ${apt.service_type}\n\nPor favor llega 10 minutos antes.\n\nAtentamente,\nEquipo Médico PROVETCARE`;
+            actionType = 'confirm';
+        } else if (newStatus === 'rejected') {
+            subject = `⚠️ Actualización sobre tu Cita - ${petName}`;
+            message = `Hola ${clientName},\n\nLamentablemente no podemos confirmar tu cita para ${petName} programada para el ${dateStr} a las ${timeStr}.\n\nMotivo: Horario no disponible.\n\nPor favor, ingresa a la plataforma o contáctanos para seleccionar un nuevo horario.\n\nDisculpa las molestias,\nEquipo PROVETCARE`;
+            actionType = 'reject';
+        }
+
+        setEmailModalData({
+            email: clientEmail,
+            subject,
+            message
+        });
+        setPendingAction({ appointmentId: apt.id, newStatus });
+        setShowEmailModal(true); // Cambiado: Usamos showEmailModal en lugar de actionType para visibilidad
+        // Guardamos el tipo de acción en el estado de data o separado si es necesario para estilos
+        setEmailModalData(prev => ({ ...prev, actionType }));
+    };
+
+    const handleConfirmWithEmail = async (emailData) => {
+        if (!pendingAction) return;
+        const { appointmentId, newStatus } = pendingAction;
+
         try {
-            // Lógica específica del flujo A
-            if (currentStatus === 'requested' && newStatus === 'under_review') {
-                await api.patch(`/appointments/${appointmentId}/mark-review`);
-                toast.success('Cita marcada "En Revisión"');
-            } else if (newStatus === 'confirmed') {
+            // 1. Ejecutar la acción en la base de datos
+            if (newStatus === 'confirmed') {
                 await api.patch(`/appointments/${appointmentId}/status`, {
                     status: 'confirmed',
-                    adminNotes: 'Confirmada por veterinario'
+                    adminNotes: 'Confirmada y notificada por correo'
                 });
                 toast.success('Cita confirmada exitosamente');
             } else if (newStatus === 'rejected') {
-                if (!confirm('¿Estás seguro de rechazar esta cita?')) return;
                 await api.patch(`/appointments/${appointmentId}/status`, {
                     status: 'rejected',
-                    adminNotes: 'No disponible en este horario'
+                    adminNotes: 'Rechazada y notificada por correo'
                 });
                 toast.success('Cita rechazada');
             }
-            fetchDashboardData(); // Recargar datos
+
+            // 2. Enviar el correo personalizado
+            await api.post('/admin/send-custom-email', {
+                to: emailData.to,
+                subject: emailData.subject,
+                message: emailData.message
+            });
+            toast.success('Correo de notificación enviado');
+
+            fetchDashboardData();
         } catch (error) {
-            toast.error('Error al actualizar estado');
+            console.error(error);
+            toast.error('Acción realizada, pero hubo un error al enviar el correo');
+            fetchDashboardData(); // Recargar de todas formas
+        } finally {
+            setPendingAction(null);
+        }
+    };
+
+    const handleStatusChange = async (apt, newStatus) => {
+        // Para "Revisar" (flow A) no enviamos correo obligatorio, acción directa
+        if (apt.status === 'requested' && newStatus === 'under_review') {
+            try {
+                await api.patch(`/appointments/${apt.id}/mark-review`);
+                toast.success('Cita marcada "En Revisión"');
+                fetchDashboardData();
+            } catch (error) {
+                toast.error('Error al actualizar');
+            }
+            return;
+        }
+
+        // Para Confirmar o Rechazar, abrimos el Modal
+        if (newStatus === 'confirmed' || newStatus === 'rejected') {
+            openEmailModal(apt, newStatus);
         }
     };
 
@@ -265,14 +338,14 @@ export default function VetDashboard() {
                                         {apt.status === 'requested' && (
                                             <>
                                                 <button
-                                                    onClick={() => handleStatusChange(apt.id, 'under_review', apt.status)}
+                                                    onClick={() => handleStatusChange(apt, 'under_review')}
                                                     className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-yellow-700 bg-yellow-50 rounded-md hover:bg-yellow-100 border border-yellow-200"
                                                     title="Marcar para revisión"
                                                 >
                                                     <Clock size={14} /> Revisar
                                                 </button>
                                                 <button
-                                                    onClick={() => handleStatusChange(apt.id, 'rejected', apt.status)}
+                                                    onClick={() => handleStatusChange(apt, 'rejected')}
                                                     className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-md hover:bg-red-100 border border-red-200"
                                                     title="Rechazar"
                                                 >
@@ -284,13 +357,13 @@ export default function VetDashboard() {
                                         {apt.status === 'under_review' && (
                                             <>
                                                 <button
-                                                    onClick={() => handleStatusChange(apt.id, 'confirmed', apt.status)}
+                                                    onClick={() => handleStatusChange(apt, 'confirmed')}
                                                     className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 rounded-md hover:bg-green-100 border border-green-200"
                                                 >
                                                     <CheckCircle size={14} /> Aprobar
                                                 </button>
                                                 <button
-                                                    onClick={() => handleStatusChange(apt.id, 'rejected', apt.status)}
+                                                    onClick={() => handleStatusChange(apt, 'rejected')}
                                                     className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-md hover:bg-red-100 border border-red-200"
                                                 >
                                                     <XCircle size={14} />
@@ -300,6 +373,15 @@ export default function VetDashboard() {
 
                                         {(apt.status === 'confirmed' || apt.status === 'rejected') && (
                                             <div className="flex justify-end gap-2">
+                                                {/* Botón Ver Historial Médico - Siempre visible */}
+                                                <button
+                                                    onClick={() => navigate(`/medical-history/${apt.pet_id}`)}
+                                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-teal-700 bg-teal-50 rounded-md hover:bg-teal-100 border border-teal-200 shadow-sm"
+                                                    title="Ver historial médico completo"
+                                                >
+                                                    <FileText size={14} /> Historial
+                                                </button>
+
                                                 {apt.status === 'confirmed' && (
                                                     <button
                                                         onClick={() => setSelectedAppointment(apt)}
@@ -322,37 +404,77 @@ export default function VetDashboard() {
                     )}
                 </div>
 
-                {/* Modal de Prescripción / Facturación */}
+                {/* Modal de Email de Confirmación/Rechazo */}
+                <EmailModal
+                    isOpen={showEmailModal}
+                    onClose={() => setShowEmailModal(false)}
+                    onSend={handleConfirmWithEmail}
+                    initialData={emailModalData}
+                    actionType={emailModalData?.actionType}
+                />
+
+                {/* Modal de Gestión Médica (Receta / Facturación) */}
                 {selectedAppointment && (
                     <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
                         <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                            <div className="bg-emerald-600 px-6 py-4 flex justify-between items-center text-white sticky top-0 z-10">
-                                <div>
-                                    <h3 className="font-bold text-lg flex items-center gap-2">
-                                        <ClipboardList size={20} /> Gestión Médica: {selectedAppointment.pet_name}
-                                    </h3>
-                                    <p className="text-xs text-emerald-100">
-                                        {selectedAppointment.service_type} - {selectedAppointment.client_name}
-                                    </p>
+                            {/* Header con Pestañas */}
+                            <div className="bg-emerald-600 sticky top-0 z-10">
+                                <div className="px-6 py-4 flex justify-between items-center text-white">
+                                    <div>
+                                        <h3 className="font-bold text-lg flex items-center gap-2">
+                                            <ClipboardList size={20} /> Gestión Médica: {selectedAppointment.pet_name}
+                                        </h3>
+                                        <p className="text-xs text-emerald-100">
+                                            {selectedAppointment.service_type} - {selectedAppointment.client_name}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setSelectedAppointment(null);
+                                            setActiveTab('prescription'); // Reset tab
+                                        }}
+                                        className="hover:bg-emerald-700 p-1 rounded transition"
+                                    >
+                                        <XCircle size={24} />
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={() => setSelectedAppointment(null)}
-                                    className="hover:bg-emerald-700 p-1 rounded transition"
-                                >
-                                    <XCircle size={24} />
-                                </button>
+
+                                {/* Tabs Navigation */}
+                                <div className="flex px-6 space-x-4 bg-emerald-700/50">
+                                    <button
+                                        onClick={() => setActiveTab('prescription')}
+                                        className={`pb-3 pt-3 px-4 font-medium text-sm transition border-b-2 flex items-center gap-2 ${activeTab === 'prescription'
+                                                ? 'border-white text-white'
+                                                : 'border-transparent text-emerald-200 hover:text-white'
+                                            }`}
+                                    >
+                                        <ClipboardList size={16} /> Receta Médica
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveTab('invoice')}
+                                        className={`pb-3 pt-3 px-4 font-medium text-sm transition border-b-2 flex items-center gap-2 ${activeTab === 'invoice'
+                                                ? 'border-white text-white'
+                                                : 'border-transparent text-emerald-200 hover:text-white'
+                                            }`}
+                                    >
+                                        <CreditCard size={16} /> Caja / Cobros
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="p-6">
-                                <PrescriptionPanel
-                                    appointmentId={selectedAppointment.id}
-                                    petId={selectedAppointment.pet_id}
-                                    onSuccess={() => {
-                                        // Opcional: Cerrar modal o refrescar
-                                        // setSelectedAppointment(null);
-                                        fetchDashboardData();
-                                    }}
-                                />
+                            <div className="p-6 bg-gray-50 min-h-[500px]">
+                                {activeTab === 'prescription' ? (
+                                    <PrescriptionPanel
+                                        appointmentId={selectedAppointment.id}
+                                        petId={selectedAppointment.pet_id}
+                                        onSuccess={() => fetchDashboardData()}
+                                    />
+                                ) : (
+                                    <CheckoutPanel
+                                        clientId={selectedAppointment.client_id || selectedAppointment.owner_id}
+                                        onSuccess={() => fetchDashboardData()}
+                                    />
+                                )}
                             </div>
                         </div>
                     </div>
@@ -475,8 +597,6 @@ export default function VetDashboard() {
         </div>
     );
 }
-
-// Componente Helper para Badges
 function StatusBadge({ status }) {
     const styles = {
         requested: 'bg-blue-100 text-blue-800 border-blue-200',

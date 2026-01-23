@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
-import Navbar from './components/Navbar';
+import Layout from './components/Layout';
 
 // Pages
 import Login from './pages/Login';
@@ -9,26 +9,31 @@ import Dashboard from './pages/Dashboard';
 import Calendar from './pages/Calendar';
 import Pets from './pages/Pets';
 import Chat from './pages/Chat';
-
+import MedicalHistory from './pages/MedicalHistory';
 import LandingPage from './pages/LandingPage';
 
+/**
+ * App Component
+ * Componente principal que define todas las rutas de la aplicación
+ * - Rutas públicas: Landing, Login, Registro de Veterinarios
+ * - Rutas protegidas: Dashboard, Calendario, Mascotas, Chat, Historial Médico
+ */
 function App() {
     return (
         <Routes>
-            {/* Public Routes */}
+            {/* ========== PUBLIC ROUTES ========== */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register-vet" element={<RegisterVet />} />
 
-            {/* Protected Routes */}
+            {/* ========== PROTECTED ROUTES ========== */}
             <Route
                 path="/dashboard"
                 element={
                     <ProtectedRoute>
-                        <>
-                            <Navbar />
+                        <Layout>
                             <Dashboard />
-                        </>
+                        </Layout>
                     </ProtectedRoute>
                 }
             />
@@ -37,10 +42,9 @@ function App() {
                 path="/calendar"
                 element={
                     <ProtectedRoute>
-                        <>
-                            <Navbar />
+                        <Layout>
                             <Calendar />
-                        </>
+                        </Layout>
                     </ProtectedRoute>
                 }
             />
@@ -49,10 +53,9 @@ function App() {
                 path="/pets"
                 element={
                     <ProtectedRoute>
-                        <>
-                            <Navbar />
+                        <Layout>
                             <Pets />
-                        </>
+                        </Layout>
                     </ProtectedRoute>
                 }
             />
@@ -61,15 +64,29 @@ function App() {
                 path="/chat"
                 element={
                     <ProtectedRoute>
-                        <>
-                            <Navbar />
+                        <Layout>
                             <Chat />
-                        </>
+                        </Layout>
                     </ProtectedRoute>
                 }
             />
+
+            <Route
+                path="/medical-history/:petId"
+                element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <MedicalHistory />
+                        </Layout>
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* ========== 404 FALLBACK ========== */}
+            <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
     );
 }
 
 export default App;
+

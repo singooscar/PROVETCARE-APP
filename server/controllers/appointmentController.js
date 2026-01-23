@@ -227,17 +227,104 @@ export const getPendingAppointments = async (req, res) => {
 
 /**
  * Obtiene todas las citas (con filtros opcionales)
+ * 
+ * MEJORA: Incluye historiales médicos y prescripciones con medicinas
+ * mediante LEFT JOINs optimizados y agregación JSON
  */
 export const getAllAppointments = async (req, res) => {
     try {
         const { status, date } = req.query;
 
+        // =====================================================================
+        // CONSULTA MEJORADA CON HISTORIALES MÉDICOS Y PRESCRIPCIONES
+        // =====================================================================
         let query = `
-            SELECT a.*, u.full_name as client_name, u.email as client_email, u.phone as client_phone,
-                   p.name as pet_name, p.species as pet_species
+            SELECT 
+                -- Datos de la cita
+                a.id,
+                a.appointment_date,
+                a.appointment_time,
+                a.service_type,
+                a.status,
+                a.notes,
+                a.admin_notes,
+                a.reminder_sent,
+                a.created_at,
+                a.updated_at,
+                
+                -- Cliente
+                a.client_id,
+                u.full_name as client_name,
+                u.email as client_email,
+                u.phone as client_phone,
+                
+                -- Mascota
+                a.pet_id,
+                p.name as pet_name,
+                p.species as pet_species,
+                p.breed as pet_breed,
+                p.age as pet_age,
+                p.weight as pet_weight,
+                p.gender as pet_gender,
+                p.photo_url as pet_photo,
+                
+                -- Contadores
+                COUNT(DISTINCT mr.id) as medical_records_count,
+                COUNT(DISTINCT pr.id) as prescriptions_count,
+                
+                -- Historial médico (agregado como JSON)
+                COALESCE(
+                    json_agg(
+                        DISTINCT jsonb_build_object(
+                            'id', mr.id,
+                            'visit_date', mr.visit_date,
+                            'diagnosis', mr.diagnosis,
+                            'treatment', mr.treatment,
+                            'medications', mr.medications,
+                            'weight', mr.weight,
+                            'temperature', mr.temperature,
+                            'notes', mr.notes,
+                            'veterinarian_name', mr.veterinarian_name,
+                            'created_at', mr.created_at
+                        )
+                    ) FILTER (WHERE mr.id IS NOT NULL),
+                    '[]'::json
+                ) as medical_records,
+                
+                -- Prescripciones con medicinas (agregado como JSON)
+                COALESCE(
+                    json_agg(
+                        DISTINCT jsonb_build_object(
+                            'id', pr.id,
+                            'instructions', pr.instructions,
+                            'pdf_url', pr.pdf_url,
+                            'status', pr.status,
+                            'created_at', pr.created_at,
+                            'vet_name', vet.full_name,
+                            'medications', (
+                                SELECT json_agg(
+                                    jsonb_build_object(
+                                        'id', pi.id,
+                                        'medication_name', pi.medication_name,
+                                        'dosage', pi.dosage,
+                                        'duration', pi.duration,
+                                        'quantity', pi.quantity
+                                    )
+                                )
+                                FROM prescription_items pi
+                                WHERE pi.prescription_id = pr.id
+                            )
+                        )
+                    ) FILTER (WHERE pr.id IS NOT NULL),
+                    '[]'::json
+                ) as prescriptions
+                
             FROM appointments a
             JOIN users u ON a.client_id = u.id
             JOIN pets p ON a.pet_id = p.id
+            LEFT JOIN medical_records mr ON a.id = mr.appointment_id
+            LEFT JOIN prescriptions pr ON (mr.prescription_id = pr.id OR pr.appointment_id = a.id)
+            LEFT JOIN users vet ON pr.vet_id = vet.id
         `;
 
         const conditions = [];
@@ -263,25 +350,52 @@ export const getAllAppointments = async (req, res) => {
             query += ' WHERE ' + conditions.join(' AND ');
         }
 
+        // Agrupar por todos los campos de la cita
+        query += `
+            GROUP BY 
+                a.id, a.appointment_date, a.appointment_time, a.service_type, 
+                a.status, a.notes, a.admin_notes, a.reminder_sent, 
+                a.created_at, a.updated_at, a.client_id, a.pet_id,
+                u.full_name, u.email, u.phone,
+                p.name, p.species, p.breed, p.age, p.weight, p.gender, p.photo_url
+        `;
+
         query += ' ORDER BY a.appointment_date ASC, a.appointment_time ASC';
 
+        console.log('🔍 Ejecutando consulta mejorada de citas...');
         const result = await pool.query(query, params);
+        console.log(`✅ ${result.rows.length} citas obtenidas con historiales y prescripciones`);
+
+        // Formatear fechas a ISO 8601
+        const appointments = result.rows.map(row => ({
+            ...row,
+            appointment_date: row.appointment_date?.toISOString?.() || row.appointment_date,
+            appointment_time: row.appointment_time,
+            created_at: row.created_at?.toISOString?.() || row.created_at,
+            updated_at: row.updated_at?.toISOString?.() || row.updated_at
+        }));
 
         res.json({
             success: true,
             data: {
-                appointments: result.rows,
-                count: result.rows.length,
+                appointments,
+                count: appointments.length,
                 filters: { status, date }
             }
         });
 
     } catch (error) {
-        console.error('Error getting appointments:', error);
+        console.error('❌ Error al obtener citas:', error);
+
+        // Error detallado para depuración
         res.status(500).json({
             success: false,
-            message: 'Error al obtener citas',
-            error: 'INTERNAL_SERVER_ERROR'
+            message: 'Error interno del servidor al obtener citas',
+            error: 'INTERNAL_SERVER_ERROR',
+            details: process.env.NODE_ENV === 'development' ? {
+                message: error.message,
+                stack: error.stack
+            } : undefined
         });
     }
 };
@@ -546,6 +660,253 @@ export const markAsUnderReview = async (req, res) => {
             ...(process.env.NODE_ENV === 'development' && {
                 debug: error.message
             })
+        });
+    }
+};
+
+// ============================================================================
+// NUEVO: getAppointmentById - Obtener cita individual con TODA la información
+// ============================================================================
+
+/**
+ * Obtiene una cita específica con toda su información relacionada
+ * 
+ * Incluye:
+ * - Datos completos de la cita
+ * - Información del cliente (dueño)
+ * - Información de la mascota
+ * - TODOS los historiales médicos asociados
+ * - TODAS las prescripciones con sus medicinas detalladas
+ * 
+ * @route GET /api/appointments/:id
+ * @access Authenticated (Admin: todas, Cliente: solo sus citas)
+ */
+export const getAppointmentById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        const userRole = req.user.role;
+
+        // =====================================================================
+        // VALIDACIÓN DE ENTRADA
+        // =====================================================================
+        if (!id || isNaN(parseInt(id))) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de cita inválido',
+                error: 'INVALID_APPOINTMENT_ID'
+            });
+        }
+
+        // =====================================================================
+        // CONSULTA PRINCIPAL: Cita con cliente y mascota
+        // =====================================================================
+        const appointmentQuery = `
+            SELECT 
+                a.id,
+                a.appointment_date,
+                a.appointment_time,
+                a.service_type,
+                a.status,
+                a.notes,
+                a.admin_notes,
+                a.reminder_sent,
+                a.created_at,
+                a.updated_at,
+                
+                -- Cliente
+                a.client_id,
+                u.full_name as client_name,
+                u.email as client_email,
+                u.phone as client_phone,
+                
+                -- Mascota
+                a.pet_id,
+                p.name as pet_name,
+                p.species as pet_species,
+                p.breed as pet_breed,
+                p.age as pet_age,
+                p.weight as pet_weight,
+                p.gender as pet_gender,
+                p.photo_url as pet_photo,
+                p.notes as pet_notes
+                
+            FROM appointments a
+            JOIN users u ON a.client_id = u.id
+            JOIN pets p ON a.pet_id = p.id
+            WHERE a.id = $1
+        `;
+
+        const appointmentResult = await pool.query(appointmentQuery, [id]);
+
+        if (appointmentResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Cita no encontrada',
+                error: 'APPOINTMENT_NOT_FOUND'
+            });
+        }
+
+        const appointment = appointmentResult.rows[0];
+
+        // =====================================================================
+        // VERIFICACIÓN DE PERMISOS
+        // =====================================================================
+        if (userRole !== 'admin' && appointment.client_id !== userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'No tienes permiso para ver esta cita',
+                error: 'FORBIDDEN'
+            });
+        }
+
+        // =====================================================================
+        // CONSULTA: Historiales médicos de la cita
+        // =====================================================================
+        const medicalRecordsQuery = `
+            SELECT 
+                mr.id,
+                mr.visit_date,
+                mr.diagnosis,
+                mr.treatment,
+                mr.medications,
+                mr.weight,
+                mr.temperature,
+                mr.notes,
+                mr.veterinarian_name,
+                mr.prescription_id,
+                mr.created_at,
+                mr.updated_at
+            FROM medical_records mr
+            WHERE mr.appointment_id = $1
+            ORDER BY mr.visit_date DESC, mr.created_at DESC
+        `;
+
+        const medicalRecordsResult = await pool.query(medicalRecordsQuery, [id]);
+
+        // =====================================================================
+        // CONSULTA: Prescripciones asociadas a la cita (directas o vía historial)
+        // =====================================================================
+        const prescriptionsQuery = `
+            SELECT DISTINCT
+                pr.id,
+                pr.instructions,
+                pr.pdf_url,
+                pr.status,
+                pr.created_at,
+                v.full_name as vet_name
+            FROM prescriptions pr
+            LEFT JOIN users v ON pr.vet_id = v.id
+            WHERE pr.appointment_id = $1 
+               OR pr.id IN (
+                   SELECT DISTINCT prescription_id 
+                   FROM medical_records 
+                   WHERE appointment_id = $1 AND prescription_id IS NOT NULL
+               )
+            ORDER BY pr.created_at DESC
+        `;
+
+        const prescriptionsResult = await pool.query(prescriptionsQuery, [id]);
+
+        // =====================================================================
+        // CONSULTA: Medicinas de cada prescripción
+        // =====================================================================
+        const prescriptionsWithMeds = await Promise.all(
+            prescriptionsResult.rows.map(async (prescription) => {
+                const medsQuery = `
+                    SELECT 
+                        pi.id,
+                        pi.medication_name,
+                        pi.dosage,
+                        pi.duration,
+                        pi.quantity,
+                        pi.inventory_item_id
+                    FROM prescription_items pi
+                    WHERE pi.prescription_id = $1
+                    ORDER BY pi.id ASC
+                `;
+
+                const medsResult = await pool.query(medsQuery, [prescription.id]);
+
+                return {
+                    ...prescription,
+                    created_at: prescription.created_at?.toISOString?.() || prescription.created_at,
+                    medications: medsResult.rows
+                };
+            })
+        );
+
+        // =====================================================================
+        // FORMATEAR RESPUESTA CON FECHAS ISO 8601
+        // =====================================================================
+        const formattedMedicalRecords = medicalRecordsResult.rows.map(record => ({
+            ...record,
+            visit_date: record.visit_date?.toISOString?.()?.split('T')[0] || record.visit_date,
+            created_at: record.created_at?.toISOString?.() || record.created_at,
+            updated_at: record.updated_at?.toISOString?.() || record.updated_at
+        }));
+
+        const response = {
+            success: true,
+            data: {
+                // Información básica de la cita
+                id: appointment.id,
+                appointment_date: appointment.appointment_date?.toISOString?.()?.split('T')[0] || appointment.appointment_date,
+                appointment_time: appointment.appointment_time,
+                service_type: appointment.service_type,
+                status: appointment.status,
+                notes: appointment.notes,
+                admin_notes: appointment.admin_notes,
+                reminder_sent: appointment.reminder_sent,
+                created_at: appointment.created_at?.toISOString?.() || appointment.created_at,
+                updated_at: appointment.updated_at?.toISOString?.() || appointment.updated_at,
+
+                // Información del cliente
+                client: {
+                    id: appointment.client_id,
+                    name: appointment.client_name,
+                    email: appointment.client_email,
+                    phone: appointment.client_phone
+                },
+
+                // Información de la mascota
+                pet: {
+                    id: appointment.pet_id,
+                    name: appointment.pet_name,
+                    species: appointment.pet_species,
+                    breed: appointment.pet_breed,
+                    age: appointment.pet_age,
+                    weight: appointment.pet_weight,
+                    gender: appointment.pet_gender,
+                    photo_url: appointment.pet_photo,
+                    notes: appointment.pet_notes
+                },
+
+                // Historiales médicos
+                medical_records: formattedMedicalRecords,
+                medical_records_count: formattedMedicalRecords.length,
+
+                // Prescripciones con medicinas
+                prescriptions: prescriptionsWithMeds,
+                prescriptions_count: prescriptionsWithMeds.length
+            }
+        };
+
+        console.log(`✅ Cita ${id} obtenida con ${formattedMedicalRecords.length} historiales y ${prescriptionsWithMeds.length} prescripciones`);
+
+        res.json(response);
+
+    } catch (error) {
+        console.error('❌ Error al obtener cita por ID:', error);
+
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor al obtener la cita',
+            error: 'INTERNAL_SERVER_ERROR',
+            details: process.env.NODE_ENV === 'development' ? {
+                message: error.message,
+                stack: error.stack
+            } : undefined
         });
     }
 };

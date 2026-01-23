@@ -1,37 +1,101 @@
 import { pool } from '../config/db.js';
 
-// Obtener inventario (medicamentos y productos)
+/**
+ * Obtener inventario con búsqueda opcional
+ * GET /api/inventory?search=término
+ */
 export const getInventory = async (req, res) => {
     try {
         const { search } = req.query;
 
-        let query = 'SELECT id, name, description, unit_price, stock, unit_type FROM inventory_items WHERE active = TRUE';
+        let query = `
+            SELECT id, name, category, description, unit_price, stock, unit
+            FROM inventory
+        `;
+
+        console.log(`🔍 Búsqueda de inventario: "${search || ''}"`);
+
         const params = [];
 
-        if (search) {
-            query += ' AND name ILIKE $1';
-            params.push(`%${search}%`);
+        // Si hay búsqueda, filtrar por nombre o categoría
+        if (search && search.trim()) {
+            query += ` WHERE (
+                name ILIKE $1 OR
+                category ILIKE $1 OR
+                description ILIKE $1
+            )`;
+            params.push(`%${search.trim()}%`);
         }
 
-        query += ' ORDER BY name ASC';
+        query += ` ORDER BY category, name LIMIT 50`;
 
         const result = await pool.query(query, params);
+
         res.json(result.rows);
+
     } catch (error) {
-        console.error('Error al obtener inventario:', error);
-        res.status(500).json({ error: 'Error al cargar inventario' });
+        console.error('Error obteniendo inventario:', error);
+        res.status(500).json({
+            error: 'Error al obtener inventario',
+            message: error.message
+        });
     }
 };
 
-// Obtener catálogo de servicios clínicos
-export const getServices = async (req, res) => {
+/**
+ * Obtener un producto por ID
+ * GET /api/inventory/:id
+ */
+export const getInventoryItem = async (req, res) => {
     try {
+        const { id } = req.params;
+
         const result = await pool.query(
-            'SELECT id, name, description, base_price, duration_minutes FROM services_catalog WHERE active = TRUE ORDER BY name ASC'
+            'SELECT * FROM inventory WHERE id = $1',
+            [id]
         );
-        res.json(result.rows);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        res.json(result.rows[0]);
+
     } catch (error) {
-        console.error('Error al obtener servicios:', error);
-        res.status(500).json({ error: 'Error al cargar servicios' });
+        console.error('Error obteniendo producto:', error);
+        res.status(500).json({ error: 'Error al obtener producto' });
+    }
+};
+
+/**
+ * Actualizar stock de un producto
+ * PUT /api/inventory/:id/stock
+ */
+export const updateStock = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { quantity } = req.body;
+
+        if (typeof quantity !== 'number') {
+            return res.status(400).json({ error: 'Cantidad inválida' });
+        }
+
+        const result = await pool.query(
+            `UPDATE inventory 
+             SET stock = stock + $1, updated_at = CURRENT_TIMESTAMP
+             WHERE id = $2
+             RETURNING *`,
+            [quantity, id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        res.json(result.rows[0]);
+
+    } catch (error) {
+        console.error('Error actualizando stock:', error);
+        res.status(500).json({ error: 'Error al actualizar stock' });
     }
 };

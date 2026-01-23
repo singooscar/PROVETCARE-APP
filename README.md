@@ -36,13 +36,24 @@ Sistema moderno y completo para la gestión de citas veterinarias, desarrollado 
 - 💬 **Chat en Tiempo Real** - Comunicación directa con la clínica
 - 📱 **Recordatorios Automáticos** - Emails 24h antes de la cita
 - 📊 **Dashboard Personalizado** - Vista general de tus citas y mascotas
+- 📋 **Historial Médico** - Visualiza el historial completo de salud de tus mascotas
+- 💊 **Recetas Médicas** - Descarga recetas en PDF con medicamentos y dosis
+- 💳 **Gestión de Pagos** - Sistema de facturación y pagos en línea
+- 📄 **Facturas Electrónicas** - Descarga e imprime facturas en PDF
 
-### Para Administradores
+### Para Veterinarios/Administradores
 - ✅ **Gestión de Citas** - Aprobar, rechazar o completar citas
 - 👥 **Vista de Todos los Clientes** - Acceso completo a la información
 - 📈 **Estadísticas en Tiempo Real** - Citas pendientes, completadas, etc.
 - 💬 **Chat Multi-usuario** - Atención a múltiples clientes
-- 📋 **Historial Médico** - Registro de consultas y tratamientos
+- 📋 **Historial Médico Completo** - Registro detallado de consultas y tratamientos
+- 💊 **Generación de Recetas** - Crea recetas médicas con PDF automático
+- 🏥 **Panel Veterinario Avanzado** - Dashboard especializado para veterinarios
+- 💰 **Sistema de Facturación** - Genera facturas automáticas y recibos
+- 💳 **Gestión de Cobros** - Panel "Por Cobrar" y procesamiento de pagos
+- 📧 **Notificaciones al Cliente** - Email automático con recetas y recibos
+- 📊 **Registro de Vacunas** - Control de vacunación y seguimiento
+- ⚖️ **Control de Peso/Temperatura** - Métricas vitales en historiales
 
 ### Características Técnicas
 - 🔒 **Seguridad Robusta** - Protección contra XSS, SQL Injection, CSRF
@@ -64,6 +75,9 @@ Sistema moderno y completo para la gestión de citas veterinarias, desarrollado 
 - **Real-time:** Socket.io
 - **Email:** Nodemailer
 - **Seguridad:** Helmet, CORS, Bcrypt
+- **Generación de PDFs:** PDFKit
+- **Tareas Programadas:** Node-Cron
+- **Automatizaciones:** Puppeteer
 
 ### Frontend
 - **Framework:** React 18
@@ -224,14 +238,23 @@ PROVETCAREE/
 │   ├── public/
 │   ├── src/
 │   │   ├── components/       # Componentes reutilizables
-│   │   │   └── ProtectedRoute.jsx
+│   │   │   ├── ProtectedRoute.jsx
+│   │   │   ├── Navbar.jsx
+│   │   │   ├── PrescriptionPanel.jsx    # Panel de recetas médicas
+│   │   │   ├── InvoicePanel.jsx         # Panel de facturación
+│   │   │   ├── CheckoutPanel.jsx        # Panel de cobros y pagos
+│   │   │   └── EmailModal.jsx           # Modal para envío de emails
 │   │   ├── context/          # Context API
 │   │   │   └── AuthContext.jsx
 │   │   ├── pages/            # Páginas principales
+│   │   │   ├── LandingPage.jsx          # Página de inicio
 │   │   │   ├── Login.jsx
+│   │   │   ├── RegisterVet.jsx          # Registro de veterinarios
 │   │   │   ├── Dashboard.jsx
+│   │   │   ├── VetDashboard.jsx         # Dashboard veterinario
 │   │   │   ├── Calendar.jsx
 │   │   │   ├── Pets.jsx
+│   │   │   ├── MedicalHistory.jsx       # Historial médico
 │   │   │   ├── Chat.jsx
 │   │   │   └── NotFound.jsx
 │   │   ├── services/         # API clients
@@ -251,7 +274,13 @@ PROVETCAREE/
 │   │   ├── authController.js
 │   │   ├── appointmentController.js
 │   │   ├── petController.js
-│   │   └── chatController.js
+│   │   ├── chatController.js
+│   │   ├── adminController.js
+│   │   ├── medicalRecordController.js    # Historial médico
+│   │   ├── prescriptionController.js     # Recetas médicas
+│   │   ├── invoiceController.js          # Facturas
+│   │   ├── billingController.js          # Facturación/Cobros
+│   │   └── ecosystemController.js
 │   ├── middleware/
 │   │   ├── authMiddleware.js
 │   │   └── validators.js
@@ -259,20 +288,104 @@ PROVETCAREE/
 │   │   ├── authRoutes.js
 │   │   ├── appointmentRoutes.js
 │   │   ├── petRoutes.js
-│   │   └── chatRoutes.js
+│   │   ├── chatRoutes.js
+│   │   ├── adminRoutes.js
+│   │   ├── medicalRecordRoutes.js        # Rutas historial
+│   │   ├── prescriptionRoutes.js         # Rutas recetas
+│   │   ├── invoiceRoutes.js              # Rutas facturas
+│   │   ├── billingRoutes.js              # Rutas facturación
+│   │   └── ecosystemRoutes.js
 │   ├── services/
-│   │   └── reminderService.js
+│   │   ├── reminderService.js
+│   │   ├── notificationService.js        # Notificaciones email
+│   │   └── pdfService.js                 # Generación de PDFs
 │   ├── database/
 │   │   └── init.sql
 │   ├── server.js
 │   ├── .env.example
 │   └── package.json
 │
+├── uploads/                  # Archivos generados
+│   ├── prescriptions/        # PDFs de recetas
+│   ├── invoices/             # PDFs de facturas
+│   └── receipts/             # PDFs de recibos
+│
 └── docs/                     # Documentación
     ├── MATRIZ_VULNERABILIDADES.md
     ├── ERRORES_CONOCIDOS.md
     └── README.md
 ```
+
+---
+
+## 🏥 Funcionalidades Médicas Avanzadas
+
+### Sistema de Historial Médico
+
+El sistema incluye un completo historial médico para cada mascota con:
+
+- **Registros Detallados**: Diagnóstico, tratamiento, medicación, peso, temperatura
+- **Control de Acceso**: Los clientes solo ven sus mascotas, veterinarios ven todo
+- **Vista Unificada**: Vista SQL personalizada (`v_medical_history_full`) que integra:
+  - Información de la mascota y dueño
+  - Datos del veterinario responsable
+  - Recetas médicas vinculadas
+  - Métricas de salud (peso, temperatura)
+- **Seguimiento de Vacunas**: Registro cronológico de todas las vacunas aplicadas
+
+### Recetas Médicas con PDF
+
+Sistema completo de prescripciones con generación automática de documentos:
+
+- **Generación Automática de PDF**: 
+  - Formato profesional con logo de la clínica
+  - Información del veterinario y paciente
+  - Lista detallada de medicamentos con dosis
+  - Instrucciones personalizadas
+- **Almacenamiento Seguro**: PDFs guardados en `/uploads/prescriptions/`
+- **Notificación por Email**: El cliente recibe automáticamente la receta por correo
+- **Descarga Directa**: Descarga del PDF desde el historial médico
+- **Vinculación**: Cada receta puede vincularse a un registro médico específico
+
+### Sistema de Facturación Integrado
+
+Gestión completa de cobros y pagos:
+
+#### Generación de Facturas
+- **Facturación desde Cita**: Crea facturas directamente desde una cita completada
+- **Múltiples Items**: Cada factura puede tener varios servicios/productos
+- **Cálculo Automático**: Subtotales, impuestos y total calculados automáticamente
+- **PDF Profesional**: Factura generada en PDF con formato empresarial
+- **Número de Factura Único**: Sistema FAC-XXXXXX automático
+
+#### Panel "Por Cobrar"
+- **Vista de Cargos Pendientes**: Dashboard de todos los servicios pendientes de pago
+- **Procesamiento de Pagos**: 
+  - Múltiples métodos: Efectivo, Tarjeta, Transferencia
+  - Pago parcial o total de cargos
+  - Generación automática de recibo PDF
+- **Historial de Pagos**: Registro completo de todas las transacciones
+- **Notificación al Cliente**: Email automático con recibo adjunto
+
+#### Reportes
+- **Recibos de Pago**: PDF generado automáticamente al procesar pago
+- **Historial de Facturación**: Consulta de facturas por cliente, fecha, monto
+
+### Panel Veterinario Avanzado
+
+Dashboard especializado para veterinarios con:
+
+- **Vista de Calendario**: Todas las citas del día/semana
+- **Gestión de Citas**: 
+  - Aprobar/Rechazar citas pendientes
+  - Completar citas con notas del veterinario
+- **Creación de Registros Médicos**: Directamente desde una cita
+- **Generación de Recetas**: Sistema integrado de prescripciones
+- **Facturación Rápida**: Crea facturas al finalizar la consulta
+- **Estadísticas**: 
+  - Citas del día/semana
+  - Ingresos generados
+  - Pacientes atendidos
 
 ---
 
@@ -315,6 +428,43 @@ GET    /api/chat/conversations  - Lista de conversaciones
 GET    /api/chat/messages       - Mensajes de conversación
 POST   /api/chat/messages       - Enviar mensaje
 PUT    /api/chat/messages/read  - Marcar como leído
+```
+
+### Historial Médico
+```
+GET    /api/medical-records/pet/:petId          - Obtener historial médico de una mascota
+POST   /api/medical-records                     - Crear registro médico (admin/vet)
+PUT    /api/medical-records/:id                 - Actualizar registro médico (admin/vet)
+POST   /api/medical-records/:recordId/prescription - Vincular receta a registro
+```
+
+### Recetas Médicas
+```
+POST   /api/prescriptions                       - Crear receta médica con PDF
+GET    /api/prescriptions/pet/:petId            - Obtener recetas de una mascota
+GET    /api/prescriptions/:id/download          - Descargar PDF de receta
+```
+
+### Facturación y Pagos
+```
+GET    /api/billing/pending                     - Obtener cargos pendientes (Por Cobrar)
+GET    /api/billing/history                     - Historial de pagos realizados
+POST   /api/billing/process-payment             - Procesar pago y generar recibo PDF
+POST   /api/billing/charges                     - Crear cargo manual (admin)
+```
+
+### Facturas
+```
+POST   /api/invoices                            - Crear factura desde cita
+GET    /api/invoices                            - Listar todas las facturas
+GET    /api/invoices/:id                        - Obtener factura específica
+GET    /api/invoices/:id/download               - Descargar PDF de factura
+```
+
+### Desarrollo
+```
+GET    /api/dev-token                           - Obtener token JWT de prueba (SOLO DEV)
+GET    /api/health                              - Health check del servidor
 ```
 
 **Formato de Response:**

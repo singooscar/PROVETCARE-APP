@@ -58,3 +58,44 @@ export const getDashboardStats = async (req, res) => {
         res.status(500).json({ success: false, message: 'Error al cargar estadísticas' });
     }
 };
+
+/**
+ * Enviar correo personalizado desde el panel admin
+ * POST /api/admin/send-custom-email
+ */
+import NotificationService from '../services/notificationService.js';
+
+export const sendCustomEmail = async (req, res) => {
+    try {
+        const { to, subject, message } = req.body;
+
+        if (!to || !subject || !message) {
+            return res.status(400).json({
+                success: false,
+                message: 'Faltan campos obligatorios (to, subject, message)'
+            });
+        }
+
+        console.log(`📧 Enviando correo personalizado a ${to}...`);
+
+        // Usar NotificationService para enviar el correo
+        await NotificationService.send({
+            to,
+            subject,
+            html: `<div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">${message.replace(/\n/g, '<br>')}</div>`
+        });
+
+        res.json({
+            success: true,
+            message: 'Correo enviado exitosamente'
+        });
+
+    } catch (error) {
+        console.error('❌ Error enviando correo personalizado:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al enviar el correo. Verifica la configuración SMTP.',
+            error: error.message
+        });
+    }
+};

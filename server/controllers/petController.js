@@ -23,11 +23,18 @@ export const getUserPets = async (req, res) => {
 export const getPetById = async (req, res) => {
     try {
         const { id } = req.params;
+        const userRole = req.user.role; // Asumiendo que el middleware auth agrega el rol
 
-        const result = await pool.query(
-            `SELECT * FROM pets WHERE id = $1 AND owner_id = $2`,
-            [id, req.user.id]
-        );
+        let query = 'SELECT * FROM pets WHERE id = $1';
+        let params = [id];
+
+        // Si NO es admin, filtrar por owner_id
+        if (userRole !== 'admin') {
+            query += ' AND owner_id = $2';
+            params.push(req.user.id);
+        }
+
+        const result = await pool.query(query, params);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Mascota no encontrada' });
