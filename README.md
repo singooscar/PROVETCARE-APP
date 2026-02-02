@@ -33,8 +33,7 @@ Sistema moderno y completo para la gestión de citas veterinarias, desarrollado 
 - ✅ **Registro y Autenticación Segura** - Sistema JWT con tokens de 7 días
 - 📅 **Calendario Interactivo** - Visualiza y agenda citas fácilmente
 - 🐕 **Gestión de Mascotas** - CRUD completo con información detallada
-- 💬 **Chat en Tiempo Real** - Comunicación directa con la clínica
-- 📱 **Recordatorios Automáticos** - Emails 24h antes de la cita
+-  **Recordatorios Automáticos** - Emails 24h antes de la cita
 - 📊 **Dashboard Personalizado** - Vista general de tus citas y mascotas
 - 📋 **Historial Médico** - Visualiza el historial completo de salud de tus mascotas
 - 💊 **Recetas Médicas** - Descarga recetas en PDF con medicamentos y dosis
@@ -45,7 +44,6 @@ Sistema moderno y completo para la gestión de citas veterinarias, desarrollado 
 - ✅ **Gestión de Citas** - Aprobar, rechazar o completar citas
 - 👥 **Vista de Todos los Clientes** - Acceso completo a la información
 - 📈 **Estadísticas en Tiempo Real** - Citas pendientes, completadas, etc.
-- 💬 **Chat Multi-usuario** - Atención a múltiples clientes
 - 📋 **Historial Médico Completo** - Registro detallado de consultas y tratamientos
 - 💊 **Generación de Recetas** - Crea recetas médicas con PDF automático
 - 🏥 **Panel Veterinario Avanzado** - Dashboard especializado para veterinarios
@@ -58,7 +56,6 @@ Sistema moderno y completo para la gestión de citas veterinarias, desarrollado 
 ### Características Técnicas
 - 🔒 **Seguridad Robusta** - Protección contra XSS, SQL Injection, CSRF
 - 📱 **Responsive Design** - Funciona perfectamente en móvil y escritorio
-- ⚡ **Tiempo Real** - Socket.io para chat instantáneo
 - 🎨 **UI Moderna** - TailwindCSS con animaciones suaves
 - 🔄 **API RESTful** - Endpoints bien documentados y organizados
 
@@ -72,12 +69,10 @@ Sistema moderno y completo para la gestión de citas veterinarias, desarrollado 
 - **Base de Datos:** PostgreSQL
 - **Autenticación:** JSON Web Tokens (JWT)
 - **Validación:** Zod
-- **Real-time:** Socket.io
 - **Email:** Nodemailer
 - **Seguridad:** Helmet, CORS, Bcrypt
 - **Generación de PDFs:** PDFKit
 - **Tareas Programadas:** Node-Cron
-- **Automatizaciones:** Puppeteer
 
 ### Frontend
 - **Framework:** React 18
@@ -255,7 +250,6 @@ PROVETCAREE/
 │   │   │   ├── Calendar.jsx
 │   │   │   ├── Pets.jsx
 │   │   │   ├── MedicalHistory.jsx       # Historial médico
-│   │   │   ├── Chat.jsx
 │   │   │   └── NotFound.jsx
 │   │   ├── services/         # API clients
 │   │   │   └── api.js
@@ -274,7 +268,6 @@ PROVETCAREE/
 │   │   ├── authController.js
 │   │   ├── appointmentController.js
 │   │   ├── petController.js
-│   │   ├── chatController.js
 │   │   ├── adminController.js
 │   │   ├── medicalRecordController.js    # Historial médico
 │   │   ├── prescriptionController.js     # Recetas médicas
@@ -288,7 +281,6 @@ PROVETCAREE/
 │   │   ├── authRoutes.js
 │   │   ├── appointmentRoutes.js
 │   │   ├── petRoutes.js
-│   │   ├── chatRoutes.js
 │   │   ├── adminRoutes.js
 │   │   ├── medicalRecordRoutes.js        # Rutas historial
 │   │   ├── prescriptionRoutes.js         # Rutas recetas
@@ -422,14 +414,6 @@ GET    /api/pets/:id/medical-records - Historial médico
 POST   /api/pets/:id/medical-records - Crear registro médico (admin)
 ```
 
-### Chat
-```
-GET    /api/chat/conversations  - Lista de conversaciones
-GET    /api/chat/messages       - Mensajes de conversación
-POST   /api/chat/messages       - Enviar mensaje
-PUT    /api/chat/messages/read  - Marcar como leído
-```
-
 ### Historial Médico
 ```
 GET    /api/medical-records/pet/:petId          - Obtener historial médico de una mascota
@@ -531,11 +515,6 @@ Verificar que `CLIENT_URL` en `server/.env` coincida con la URL del frontend.
 netstat -ano | findstr :5000
 taskkill /PID <PID> /F
 ```
-
-### Problema: Chat no conecta
-
-**Solución:**
-Verificar que `VITE_API_URL` en `client/.env` apunte al servidor correcto.
 
 Para más detalles: [`docs/ERRORES_CONOCIDOS.md`](docs/ERRORES_CONOCIDOS.md)
 
