@@ -44,8 +44,8 @@ export default function Navbar() {
                         <Link
                             to="/dashboard"
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isActive('/dashboard')
-                                    ? 'bg-blue-100 text-blue-600 font-semibold'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                ? 'bg-blue-100 text-blue-600 font-semibold'
+                                : 'text-gray-600 hover:bg-gray-100'
                                 }`}
                         >
                             <Home size={20} />
@@ -55,8 +55,8 @@ export default function Navbar() {
                         <Link
                             to="/calendar"
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isActive('/calendar')
-                                    ? 'bg-blue-100 text-blue-600 font-semibold'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                ? 'bg-blue-100 text-blue-600 font-semibold'
+                                : 'text-gray-600 hover:bg-gray-100'
                                 }`}
                         >
                             <Calendar size={20} />
@@ -66,24 +66,15 @@ export default function Navbar() {
                         <Link
                             to="/pets"
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isActive('/pets')
-                                    ? 'bg-blue-100 text-blue-600 font-semibold'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                ? 'bg-blue-100 text-blue-600 font-semibold'
+                                : 'text-gray-600 hover:bg-gray-100'
                                 }`}
                         >
                             <PawPrint size={20} />
-                            <span>Mis Mascotas</span>
+                            <span>{(user?.role === 'admin' || user?.role === 'veterinario') ? 'Pacientes' : 'Mis Mascotas'}</span>
                         </Link>
 
-                        <Link
-                            to="/chat"
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isActive('/chat')
-                                    ? 'bg-blue-100 text-blue-600 font-semibold'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                                }`}
-                        >
-                            <MessageCircle size={20} />
-                            <span>Chat</span>
-                        </Link>
+
                     </div>
 
                     {/* User Info y Logout */}
@@ -131,17 +122,10 @@ export default function Navbar() {
                             }`}
                     >
                         <PawPrint size={20} />
-                        <span className="text-xs">Mascotas</span>
+                        <span className="text-xs">{(user?.role === 'admin' || user?.role === 'veterinario') ? 'Pacientes' : 'Mascotas'}</span>
                     </Link>
 
-                    <Link
-                        to="/chat"
-                        className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${isActive('/chat') ? 'text-blue-600' : 'text-gray-600'
-                            }`}
-                    >
-                        <MessageCircle size={20} />
-                        <span className="text-xs">Chat</span>
-                    </Link>
+
                 </div>
             </div>
         </nav>

@@ -9,27 +9,29 @@ export const getInventory = async (req, res) => {
         const { search } = req.query;
 
         let query = `
-            SELECT id, name, category, description, unit_price, stock, unit
-            FROM inventory
+            SELECT id, name, description, unit_price, stock, unit_type, active
+            FROM inventory_items
+            WHERE active = true
         `;
 
         console.log(`🔍 Búsqueda de inventario: "${search || ''}"`);
 
         const params = [];
 
-        // Si hay búsqueda, filtrar por nombre o categoría
+        // Si hay búsqueda, filtrar por nombre o descripción
         if (search && search.trim()) {
-            query += ` WHERE (
+            query += ` AND (
                 name ILIKE $1 OR
-                category ILIKE $1 OR
                 description ILIKE $1
             )`;
             params.push(`%${search.trim()}%`);
         }
 
-        query += ` ORDER BY category, name LIMIT 50`;
+        query += ` ORDER BY name LIMIT 50`;
 
         const result = await pool.query(query, params);
+
+        console.log(`✅ Encontrados ${result.rows.length} productos`);
 
         res.json(result.rows);
 
@@ -51,7 +53,7 @@ export const getInventoryItem = async (req, res) => {
         const { id } = req.params;
 
         const result = await pool.query(
-            'SELECT * FROM inventory WHERE id = $1',
+            'SELECT * FROM inventory_items WHERE id = $1',
             [id]
         );
 
@@ -81,7 +83,7 @@ export const updateStock = async (req, res) => {
         }
 
         const result = await pool.query(
-            `UPDATE inventory 
+            `UPDATE inventory_items 
              SET stock = stock + $1, updated_at = CURRENT_TIMESTAMP
              WHERE id = $2
              RETURNING *`,

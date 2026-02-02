@@ -48,7 +48,7 @@ export function AuthProvider({ children }) {
     };
 
     const registerAdmin = async (userData) => {
-        const response = await api.post('/auth/register-admin', userData);
+        const response = await api.post('/auth/admin/register', userData);
         const { token, user } = response.data.data;
         localStorage.setItem('token', token);
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;

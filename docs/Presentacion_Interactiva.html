@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROVETCARE - Presentación del Proyecto</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            font-size: 1.3em;
+            color: #555;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            fontweight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h2 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #764ba2;
+            font-size: 1.8em;
+            margin: 25px 0 15px;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .tech-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .tech-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .tech-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .screenshot {
+            width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            margin: 20px 0;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .screenshot:hover {
+            transform: scale(1.05);
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 15px;
+            margin: 10px 0;
+            background: linear-gradient(to right, #f5f7fa, #c3cfe2);
+            border-left: 4px solid #667eea;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-list li:hover {
+            transform: translateX(10px);
+            background: linear-gradient(to right, #c3cfe2, #f5f7fa);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-number {
+            font-size: 3em;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .security-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            margin: 5px;
+            font-weight: bold;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            margin-top: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 15px;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            font-size: 40px;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🐾 PROVETCARE</h1>
+            <p class="subtitle">Sistema Web para Agendamiento de Citas Veterinarias</p>
+        </header>
+
+        <div class="nav-buttons">
+            <button class="btn btn-primary" onclick="showSection('intro')">Introducción</button>
+            <button class="btn btn-primary" onclick="showSection('tech')">Tecnologías</button>
+            <button class="btn btn-primary" onclick="showSection('arch')">Arquitectura</button>
+            <button class="btn btn-primary" onclick="showSection('demo')">Demostración</button>
+            <button class="btn btn-primary" onclick="showSection('security')">Seguridad</button>
+            <button class="btn btn-primary" onclick="showSection('conclusion')">Conclusiones</button>
+        </div>
+
+        <!-- INTRODUCCIÓN -->
+        <div id="intro" class="section active">
+            <h2>📋 Introducción al Proyecto</h2>
+
+            <h3>Problemática</h3>
+            <p style="font-size: 1.1em; line-height: 1.8">
+                Las clínicas veterinarias pequeñas y medianas todavía gestionan sus citas por <strong>WhatsApp</strong>,
+                llevan los historiales médicos en <strong>cuadernos</strong>, y las recetas las escriben a mano.
+                Esto genera pérdida de información, citas olvidadas, y una experiencia poco profesional para los
+                clientes.
+            </p>
+
+            <h3>Solución: PROVETCARE</h3>
+            <ul class="feature-list">
+                <li>✅ Sistema de calendario en línea para agendar citas</li>
+                <li>✅ Base de datos centralizada para historiales médicos</li>
+                <li>✅ Generación automática de recetas y facturas en PDF</li>
+                <li>✅ Recordatorios por email 24 horas antes de cada cita</li>
+                <li>✅ Chat en tiempo real entre veterinarios y clientes</li>
+                <li>✅ Sistema de facturación completo</li>
+                <li>✅ Control de acceso basado en roles (Cliente, Veterinario, Admin)</li>
+            </ul>
+
+            <div class="stats-container">
+                <div class="stat-box">
+                    <span class="stat-number">12</span>
+                    Páginas Frontend
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">11</span>
+                    APIs REST
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">7</span>
+                    Componentes
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">24</span>
+                    Tecnologías
+                </div>
+            </div>
+        </div>
+
+        <!-- TECNOLOGÍAS -->
+        <div id="tech" class="section">
+            <h2>⚙️ Stack Tecnológico</h2>
+
+            <h3>Frontend</h3>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h4>React 18</h4>
+                    <p>Librería para interfaces de usuario con componentes reutilizables</p>
+                </div>
+                <div class="tech-card">
+                    <h4>Vite</h4>
+                    <p>Build tool ultrarrápido con HMR instantáneo</p>
+                </div>
+                <div class="tech-card">
+                    <h4>TailwindCSS</h4>
+                    <p>Framework CSS de utilidades para diseños responsivos</p>
+                </div>
+                <div class="tech-card">
+                    <h4>React Router</h4>
+                    <p>Navegación SPA con rutas protegidas</p>
+                </div>
+                <div class="tech-card">
+                    <h4>Axios</h4>
+                    <p>Cliente HTTP con interceptores para JWT</p>
+                </div>
+                <div class="tech-card">
+                    <h4>Socket.io Client</h4>
+                    <p>WebSockets para chat en tiempo real</p>
+                </div>
+            </div>
+
+            <h3>Backend</h3>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h4>Node.js + Express</h4>
+                    <p>Servidor web y APIs REST</p>
+                </div>
+                <div class="tech-card">
+                    <h4>PostgreSQL</h4>
+                    <p>Base de datos relacional robusta</p>
+                </div>
+                <div class="tech-card">
+                    <h4>JWT</h4>
+                    <p>Autenticación stateless segura</p>
+                </div>
+                <div class="tech-card">
+                    <h4>Bcrypt</h4>
+                    <p>Hash de contraseñas con salt</p>
+                </div>
+                <div class="tech-card">
+                    <h4>PDFKit</h4>
+                    <p>Generación de recetas y facturas</p>
+                </div>
+                <div class="tech-card">
+                    <h4>Nodemailer</h4>
+                    <p>Envío de correos y recordatorios</p>
+                </div>
+            </div>
+
+            <h3>Código de Ejemplo: Generación de Token JWT</h3>
+            <div class="code-block">
+                const jwt = require('jsonwebtoken');
+
+                // Generación del token al hacer login
+                const token = jwt.sign(
+                { userId: user.id, email: user.email, role: user.role },
+                process.env.JWT_SECRET,
+                { expiresIn: '7d' }
+                );
+
+                // El cliente guarda el token
+                localStorage.setItem('token', token);
+            </div>
+        </div>
+
+        <!-- ARQUITECTURA -->
+        <div id="arch" class="section">
+            <h2>🏗️ Arquitectura del Sistema</h2>
+
+            <h3>Patrón MVC en el Backend</h3>
+            <ul class="feature-list">
+                <li><strong>Routes (Rutas):</strong> Definen los endpoints HTTP como GET /api/appointments</li>
+                <li><strong>Controllers (Controladores):</strong> Contienen la lógica de negocio</li>
+                <li><strong>Middleware:</strong> Manejan autenticación y validación</li>
+                <li><strong>Services (Servicios):</strong> Funcionalidades auxiliares</li>
+            </ul>
+
+            <h3>Estructura del Proyecto</h3>
+            <div class="code-block">
+                PROVETCAREE/
+                ├── client/ # Frontend React
+                │ ├── src/
+                │ │ ├── pages/ # 12 páginas
+                │ │ ├── components/ # 7 componentes
+                │ │ ├── context/ # AuthContext
+                │ │ └── services/ # API config
+                │ └── package.json
+                │
+                ├── server/ # Backend Express
+                │ ├── controllers/ # 11 controladores
+                │ ├── routes/ # 11 archivos de rutas
+                │ ├── middleware/ # Auth, validation, permissions
+                │ ├── services/ # Email, PDF, notifications
+                │ ├── database/ # Esquemas SQL
+                │ └── server.js # Punto de entrada
+                │
+                └── docs/ # Documentación
+            </div>
+
+            <h3>Flujo de Autenticación</h3>
+            <ul class="feature-list">
+                <li>1. Usuario envía credenciales a <code>/api/auth/login</code></li>
+                <li>2. Servidor verifica contraseña con Bcrypt</li>
+                <li>3. Si es válida, genera token JWT firmado</li>
+                <li>4. Cliente guarda token en localStorage</li>
+                <li>5. Cada petición incluye <code>Authorization: Bearer {token}</code></li>
+                <li>6. Middleware verifica token antes de procesar</li>
+            </ul>
+        </div>
+
+        <!-- DEMOSTRACIÓN -->
+        <div id="demo" class="section">
+            <h2>🎥 Demostración del Sistema</h2>
+
+            <h3>Landing Page</h3>
+            <p>Página de bienvenida con llamadas a la acción para clientes y veterinarios</p>
+            <img src="C:/Users/oscar/.gemini/antigravity/brain/a7465bb6-d5e5-4718-891e-36a888ed27c5/landing_page_1769648137514.png"
+                class="screenshot" alt="Landing Page PROVETCARE" onclick="openModal(this.src)">
+
+            <h3>Página de Login</h3>
+            <p>Sistema de autenticación con validación en tiempo real</p>
+            <img src="C:/Users/oscar/.gemini/antigravity/brain/a7465bb6-d5e5-4718-891e-36a888ed27c5/login_page_1769648152459.png"
+                class="screenshot" alt="Login Page PROVETCARE" onclick="openModal(this.src)">
+
+            <h3>Funcionalidades Principales</h3>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h4>📅 Dashboard</h4>
+                    <p>Panel principal con próximas citas y resumen de mascotas</p>
+                </div>
+                <div class="tech-card">
+                    <h4>🐕 Mascotas</h4>
+                    <p>CRUD completo con fotos y datos de cada mascota</p>
+                </div>
+                <div class="tech-card">
+                    <h4>📆 Calendario</h4>
+                    <p>Vista mensual con React Big Calendar</p>
+                </div>
+                <div class="tech-card">
+                    <h4>💬 Chat</h4>
+                    <p>Mensajería en tiempo real con Socket.io</p>
+                </div>
+                <div class="tech-card">
+                    <h4>📋 Historial</h4>
+                    <p>Registros médicos completos por mascota</p>
+                </div>
+                <div class="tech-card">
+                    <h4>💰 Facturación</h4>
+                    <p>Generación de facturas y recibos en PDF</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEGURIDAD -->
+        <div id="security" class="section">
+            <h2>🔒 Medidas de Seguridad</h2>
+
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h4>🛡️ SQL Injection</h4>
+                    <p>Consultas parametrizadas que escapan valores automáticamente</p>
+                    <div class="code-block" style="font-size: 0.8em; margin-top: 10px;">
+                        // Uso seguro
+                        const query = 'SELECT * FROM users WHERE email=$1';
+                        await pool.query(query, [email]);
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <h4>🔐 Hash de Contraseñas</h4>
+                    <p>Bcrypt con factor de costo 10</p>
+                    <div class="code-block" style="font-size: 0.8em; margin-top: 10px;">
+                        const hash = await bcrypt.hash(password, 10);
+                        const valid = await bcrypt.compare(password, hash);
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <h4>🎫 JWT Stateless</h4>
+                    <p>Tokens firmados con expiración de 7 días</p>
+                </div>
+
+                <div class="tech-card">
+                    <h4>⚡ Rate Limiting</h4>
+                    <p>100 peticiones cada 15 minutos por IP</p>
+                </div>
+
+                <div class="tech-card">
+                    <h4>🎭 XSS Prevention</h4>
+                    <p>React escapa automáticamente todo el HTML</p>
+                </div>
+
+                <div class="tech-card">
+                    <h4>🔨 Helmet.js</h4>
+                    <p>Headers de seguridad configurados</p>
+                </div>
+            </div>
+
+            <h3>Validación de Datos con Zod</h3>
+            <div class="code-block">
+                const appointmentSchema = z.object({
+                petId: z.number().positive(),
+                date: z.string().datetime(),
+                serviceType: z.enum(['consulta', 'vacuna', 'cirugia'])
+                });
+
+                // Middleware valida antes de procesar
+                const validatedData = appointmentSchema.parse(req.body);
+            </div>
+
+            <h3>Control de Acceso Basado en Roles (RBAC)</h3>
+            <ul class="feature-list">
+                <li><strong>Cliente:</strong> Ver sus mascotas, agendar citas, chat</li>
+                <li><strong>Veterinario:</strong> Ver todas las mascotas, crear historiales, generar recetas</li>
+                <li><strong>Admin:</strong> Todas las funcionalidades + gestión de usuarios</li>
+            </ul>
+        </div>
+
+        <!-- CONCLUSIONES -->
+        <div id="conclusion" class="section">
+            <h2>🎯 Conclusiones</h2>
+
+            <h3>Logros del Proyecto</h3>
+            <ul class="feature-list">
+                <li>✅ Sistema web completo y funcional</li>
+                <li>✅ Arquitectura escalable y mantenible</li>
+                <li>✅ Seguridad implementada en múltiples capas</li>
+                <li>✅ Experiencia de usuario moderna y responsive</li>
+                <li>✅ Automatización de procesos (emails, recordatorios)</li>
+                <li>✅ Generación de documentos PDF profesionales</li>
+            </ul>
+
+            <div class="stats-container">
+                <div class="stat-box">
+                    <span class="stat-number">2000+</span>
+                    Líneas de Código
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">24</span>
+                    Tecnologías
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">6</span>
+                    Medidas de Seguridad
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">100%</span>
+                    Funcional
+                </div>
+            </div>
+
+            <h3>Tecnologías Aplicadas</h3>
+            <p style="font-size: 1.1em; line-height: 1.8">
+                Este proyecto demuestra el dominio de tecnologías modernas del desarrollo web full-stack,
+                incluyendo React, Node.js, Express, PostgreSQL, WebSockets, JWT, y múltiples librerías
+                para seguridad, validación y generación de documentos.
+            </p>
+
+            <h3>Impacto</h3>
+            <p style="font-size: 1.1em; line-height: 1.8">
+                PROVETCARE digitaliza completamente la gestión de una clínica veterinaria, eliminando
+                procesos manuales propensos a errores y mejorando la experiencia tanto de veterinarios
+                como de clientes.
+            </p>
+        </div>
+
+        <footer>
+            <h3>PROVETCARE - Sistema Web Completo</h3>
+            <p>Desarrollado con React, Node.js, Express y PostgreSQL</p>
+            <p style="margin-top: 10px; color: #667eea; font-weight: bold;">Versión 1.0.0 - 2026</p>
+        </footer>
+    </div>
+
+    <!-- Modal para imágenes -->
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <span class="close-modal">&times;</span>
+        <img id="modalImage" class="modal-content">
+    </div>
+
+    <script>
+        function showSection(sectionId) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Mostrar la sección seleccionada
+            document.getElementById(sectionId).classList.add('active');
+
+            // Scroll suave al inicio
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function openModal(src) {
+            document.getElementById('imageModal').classList.add('active');
+            document.getElementById('modalImage').src = src;
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').classList.remove('active');
+        }
+    </script>
+</body>
+
+</html>

@@ -318,76 +318,76 @@ PROVETCAREE/
 
 ---
 
-## 🏥 Funcionalidades Médicas Avanzadas
+  ## 🏥 Funcionalidades Médicas Avanzadas
 
-### Sistema de Historial Médico
+  ### Sistema de Historial Médico
 
-El sistema incluye un completo historial médico para cada mascota con:
+  El sistema incluye un completo historial médico para cada mascota con:
 
-- **Registros Detallados**: Diagnóstico, tratamiento, medicación, peso, temperatura
-- **Control de Acceso**: Los clientes solo ven sus mascotas, veterinarios ven todo
-- **Vista Unificada**: Vista SQL personalizada (`v_medical_history_full`) que integra:
-  - Información de la mascota y dueño
-  - Datos del veterinario responsable
-  - Recetas médicas vinculadas
-  - Métricas de salud (peso, temperatura)
-- **Seguimiento de Vacunas**: Registro cronológico de todas las vacunas aplicadas
+  - **Registros Detallados**: Diagnóstico, tratamiento, medicación, peso, temperatura
+  - **Control de Acceso**: Los clientes solo ven sus mascotas, veterinarios ven todo
+  - **Vista Unificada**: Vista SQL personalizada (`v_medical_history_full`) que integra:
+    - Información de la mascota y dueño
+    - Datos del veterinario responsable
+    - Recetas médicas vinculadas
+    - Métricas de salud (peso, temperatura)
+  - **Seguimiento de Vacunas**: Registro cronológico de todas las vacunas aplicadas
 
-### Recetas Médicas con PDF
+  ### Recetas Médicas con PDF
 
-Sistema completo de prescripciones con generación automática de documentos:
+  Sistema completo de prescripciones con generación automática de documentos:
 
-- **Generación Automática de PDF**: 
-  - Formato profesional con logo de la clínica
-  - Información del veterinario y paciente
-  - Lista detallada de medicamentos con dosis
-  - Instrucciones personalizadas
-- **Almacenamiento Seguro**: PDFs guardados en `/uploads/prescriptions/`
-- **Notificación por Email**: El cliente recibe automáticamente la receta por correo
-- **Descarga Directa**: Descarga del PDF desde el historial médico
-- **Vinculación**: Cada receta puede vincularse a un registro médico específico
+  - **Generación Automática de PDF**: 
+    - Formato profesional con logo de la clínica
+    - Información del veterinario y paciente
+    - Lista detallada de medicamentos con dosis
+    - Instrucciones personalizadas
+  - **Almacenamiento Seguro**: PDFs guardados en `/uploads/prescriptions/`
+  - **Notificación por Email**: El cliente recibe automáticamente la receta por correo
+  - **Descarga Directa**: Descarga del PDF desde el historial médico
+  - **Vinculación**: Cada receta puede vincularse a un registro médico específico
 
-### Sistema de Facturación Integrado
+  ### Sistema de Facturación Integrado
 
-Gestión completa de cobros y pagos:
+  Gestión completa de cobros y pagos:
 
-#### Generación de Facturas
-- **Facturación desde Cita**: Crea facturas directamente desde una cita completada
-- **Múltiples Items**: Cada factura puede tener varios servicios/productos
-- **Cálculo Automático**: Subtotales, impuestos y total calculados automáticamente
-- **PDF Profesional**: Factura generada en PDF con formato empresarial
-- **Número de Factura Único**: Sistema FAC-XXXXXX automático
+  #### Generación de Facturas
+  - **Facturación desde Cita**: Crea facturas directamente desde una cita completada
+  - **Múltiples Items**: Cada factura puede tener varios servicios/productos
+  - **Cálculo Automático**: Subtotales, impuestos y total calculados automáticamente
+  - **PDF Profesional**: Factura generada en PDF con formato empresarial
+  - **Número de Factura Único**: Sistema FAC-XXXXXX automático
 
-#### Panel "Por Cobrar"
-- **Vista de Cargos Pendientes**: Dashboard de todos los servicios pendientes de pago
-- **Procesamiento de Pagos**: 
-  - Múltiples métodos: Efectivo, Tarjeta, Transferencia
-  - Pago parcial o total de cargos
-  - Generación automática de recibo PDF
-- **Historial de Pagos**: Registro completo de todas las transacciones
-- **Notificación al Cliente**: Email automático con recibo adjunto
+  #### Panel "Por Cobrar"
+  - **Vista de Cargos Pendientes**: Dashboard de todos los servicios pendientes de pago
+  - **Procesamiento de Pagos**: 
+    - Múltiples métodos: Efectivo, Tarjeta, Transferencia
+    - Pago parcial o total de cargos
+    - Generación automática de recibo PDF
+  - **Historial de Pagos**: Registro completo de todas las transacciones
+  - **Notificación al Cliente**: Email automático con recibo adjunto
 
-#### Reportes
-- **Recibos de Pago**: PDF generado automáticamente al procesar pago
-- **Historial de Facturación**: Consulta de facturas por cliente, fecha, monto
+  #### Reportes
+  - **Recibos de Pago**: PDF generado automáticamente al procesar pago
+  - **Historial de Facturación**: Consulta de facturas por cliente, fecha, monto
 
-### Panel Veterinario Avanzado
+  ### Panel Veterinario Avanzado
 
-Dashboard especializado para veterinarios con:
+  Dashboard especializado para veterinarios con:
 
-- **Vista de Calendario**: Todas las citas del día/semana
-- **Gestión de Citas**: 
-  - Aprobar/Rechazar citas pendientes
-  - Completar citas con notas del veterinario
-- **Creación de Registros Médicos**: Directamente desde una cita
-- **Generación de Recetas**: Sistema integrado de prescripciones
-- **Facturación Rápida**: Crea facturas al finalizar la consulta
-- **Estadísticas**: 
-  - Citas del día/semana
-  - Ingresos generados
-  - Pacientes atendidos
+  - **Vista de Calendario**: Todas las citas del día/semana
+  - **Gestión de Citas**: 
+    - Aprobar/Rechazar citas pendientes
+    - Completar citas con notas del veterinario
+  - **Creación de Registros Médicos**: Directamente desde una cita
+  - **Generación de Recetas**: Sistema integrado de prescripciones
+  - **Facturación Rápida**: Crea facturas al finalizar la consulta
+  - **Estadísticas**: 
+    - Citas del día/semana
+    - Ingresos generados
+    - Pacientes atendidos
 
----
+  ---
 
 ## 🔌 API Endpoints
 

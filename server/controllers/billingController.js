@@ -81,7 +81,7 @@ export const processPayment = async (req, res) => {
         // 2. Crear registro de Pago
         const paymentRes = await client.query(
             `INSERT INTO payments (client_id, amount, method, reference, notes)
-             VALUES ($1, $2, $3, $4, $5) RETURNING id, result_url, created_at`,
+             VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`,
             [clientId, paymentAmount, method, reference, notes]
         );
         const paymentId = paymentRes.rows[0].id;
@@ -164,6 +164,47 @@ export const createCharge = async (req, res) => {
     }
 };
 
+// Admin: Obtener todos los cargos
+export const getAllCharges = async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.*, 
+                   u.full_name as client_name,
+                   u.email as client_email,
+                   p.name as pet_name
+            FROM charges c
+            LEFT JOIN users u ON c.client_id = u.id
+            LEFT JOIN pets p ON c.pet_id = p.id
+            WHERE c.status IN ('PENDING', 'PARTIAL')
+            ORDER BY c.created_at DESC
+            LIMIT 100
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo todos los cargos:', error);
+        res.status(500).json({ error: 'Error al obtener cargos' });
+    }
+};
+
+// Admin: Obtener todos los pagos
+export const getAllPayments = async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.*,
+                   u.full_name as client_name,
+                   u.email as client_email
+            FROM payments p
+            LEFT JOIN users u ON p.client_id = u.id
+            ORDER BY p.created_at DESC
+            LIMIT 100
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo todos los pagos:', error);
+        res.status(500).json({ error: 'Error al obtener pagos' });
+    }
+};
+
 
 // --- Helper: Generar PDF ---
 async function generateReceiptPDF(paymentId, clientId, items, totalPaid, method, date, dbClient) {
@@ -172,8 +213,12 @@ async function generateReceiptPDF(paymentId, clientId, items, totalPaid, method,
     const clientData = clientRes.rows[0];
 
     const fileName = `recibo_${paymentId}_${Date.now()}.pdf`;
-    const relativePath = `/uploads/receipts/${fileName}`;
-    const filePath = path.join(__dirname, '../../public', relativePath);
+    // URL relativa para el frontend (debe coincidir con la ruta estática en server.js)
+    const relativeUrl = `/uploads/receipts/${fileName}`;
+
+    // Ruta absoluta del sistema de archivos donde se guardará el archivo
+    // __dirname = server/controllers -> ../.. = root -> uploads/receipts
+    const filePath = path.join(__dirname, '../../uploads/receipts', fileName);
 
     // Asegurar directorio
     const dir = path.dirname(filePath);

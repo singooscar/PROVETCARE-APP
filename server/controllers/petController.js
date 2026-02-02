@@ -3,14 +3,30 @@ import { pool } from '../config/db.js';
 // Obtener todas las mascotas del usuario autenticado
 export const getUserPets = async (req, res) => {
     try {
-        console.log(`[PETS] Fetching pets for user ${req.user.id}`);
-        const result = await pool.query(
-            `SELECT id, name, species, breed, age, weight, gender, photo_url, notes, created_at 
-       FROM pets 
-       WHERE owner_id = $1 
-       ORDER BY created_at DESC`,
-            [req.user.id]
-        );
+        const userRole = req.user.role;
+        console.log(`[PETS] Fetching pets for user ${req.user.id} (role: ${userRole})`);
+
+        let query, params;
+
+        // Si es admin, mostrar TODAS las mascotas
+        if (userRole === 'admin') {
+            query = `SELECT p.id, p.name, p.species, p.breed, p.age, p.weight, p.gender, 
+                            p.photo_url, p.notes, p.created_at, p.owner_id,
+                            u.full_name as owner_name, u.email as owner_email
+                     FROM pets p
+                     LEFT JOIN users u ON p.owner_id = u.id
+                     ORDER BY p.created_at DESC`;
+            params = [];
+        } else {
+            // Si es cliente, solo sus mascotas
+            query = `SELECT id, name, species, breed, age, weight, gender, photo_url, notes, created_at 
+                     FROM pets 
+                     WHERE owner_id = $1 
+                     ORDER BY created_at DESC`;
+            params = [req.user.id];
+        }
+
+        const result = await pool.query(query, params);
         console.log(`[PETS] Found ${result.rows.length} pets`);
         res.json(result.rows);
     } catch (error) {

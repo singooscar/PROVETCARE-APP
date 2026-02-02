@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import PrescriptionPanel from '../components/PrescriptionPanel';
-import CheckoutPanel from '../components/CheckoutPanel'; // Nuevo Componente
 import {
     Calendar as CalendarIcon,
     Users,
@@ -384,7 +382,7 @@ export default function VetDashboard() {
 
                                                 {apt.status === 'confirmed' && (
                                                     <button
-                                                        onClick={() => setSelectedAppointment(apt)}
+                                                        onClick={() => navigate(`/consultation/${apt.id}`)}
                                                         className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 shadow-sm"
                                                     >
                                                         <PlusCircle size={14} /> Gestión Médica
@@ -412,73 +410,6 @@ export default function VetDashboard() {
                     initialData={emailModalData}
                     actionType={emailModalData?.actionType}
                 />
-
-                {/* Modal de Gestión Médica (Receta / Facturación) */}
-                {selectedAppointment && (
-                    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
-                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                            {/* Header con Pestañas */}
-                            <div className="bg-emerald-600 sticky top-0 z-10">
-                                <div className="px-6 py-4 flex justify-between items-center text-white">
-                                    <div>
-                                        <h3 className="font-bold text-lg flex items-center gap-2">
-                                            <ClipboardList size={20} /> Gestión Médica: {selectedAppointment.pet_name}
-                                        </h3>
-                                        <p className="text-xs text-emerald-100">
-                                            {selectedAppointment.service_type} - {selectedAppointment.client_name}
-                                        </p>
-                                    </div>
-                                    <button
-                                        onClick={() => {
-                                            setSelectedAppointment(null);
-                                            setActiveTab('prescription'); // Reset tab
-                                        }}
-                                        className="hover:bg-emerald-700 p-1 rounded transition"
-                                    >
-                                        <XCircle size={24} />
-                                    </button>
-                                </div>
-
-                                {/* Tabs Navigation */}
-                                <div className="flex px-6 space-x-4 bg-emerald-700/50">
-                                    <button
-                                        onClick={() => setActiveTab('prescription')}
-                                        className={`pb-3 pt-3 px-4 font-medium text-sm transition border-b-2 flex items-center gap-2 ${activeTab === 'prescription'
-                                                ? 'border-white text-white'
-                                                : 'border-transparent text-emerald-200 hover:text-white'
-                                            }`}
-                                    >
-                                        <ClipboardList size={16} /> Receta Médica
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('invoice')}
-                                        className={`pb-3 pt-3 px-4 font-medium text-sm transition border-b-2 flex items-center gap-2 ${activeTab === 'invoice'
-                                                ? 'border-white text-white'
-                                                : 'border-transparent text-emerald-200 hover:text-white'
-                                            }`}
-                                    >
-                                        <CreditCard size={16} /> Caja / Cobros
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="p-6 bg-gray-50 min-h-[500px]">
-                                {activeTab === 'prescription' ? (
-                                    <PrescriptionPanel
-                                        appointmentId={selectedAppointment.id}
-                                        petId={selectedAppointment.pet_id}
-                                        onSuccess={() => fetchDashboardData()}
-                                    />
-                                ) : (
-                                    <CheckoutPanel
-                                        clientId={selectedAppointment.client_id || selectedAppointment.owner_id}
-                                        onSuccess={() => fetchDashboardData()}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
             </main>
 
             {/* Modal Nueva Cita de Control */}

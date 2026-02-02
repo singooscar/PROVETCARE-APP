@@ -96,7 +96,12 @@ SELECT client_id,
     'PAID',
     created_at
 FROM invoices
-WHERE NOT EXISTS (
+WHERE EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_name = 'invoices'
+    )
+    AND NOT EXISTS (
         SELECT 1
         FROM charges
         WHERE description LIKE 'Factura #' || invoice_number

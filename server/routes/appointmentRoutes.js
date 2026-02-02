@@ -6,7 +6,8 @@ import {
     markAsUnderReview,
     getPendingAppointments,
     getAllAppointments,
-    getAppointmentById  // NUEVO: Obtener cita individual con toda la info
+    getAppointmentById,
+    cancelAppointment
 } from '../controllers/appointmentController.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 
@@ -32,6 +33,9 @@ router.post('/request', authenticateToken, requestAppointment);
 
 // Crear cita de seguimiento (admin/veterinario)
 router.post('/follow-up', authenticateToken, requireAdmin, createFollowUpAppointment);
+
+// Cancelar cita (cliente/admin)
+router.patch('/:id/cancel', authenticateToken, cancelAppointment);
 
 // Actualizar estado de cita (admin)
 router.patch('/:id/status', authenticateToken, requireAdmin, updateAppointmentStatus);

@@ -1,140 +1,109 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { Plus, Trash2, FileText, Pill, DollarSign } from 'lucide-react';
+import { Plus, Trash2, FileText, Pill, Search, PenTool, AlertCircle } from 'lucide-react';
 import { getFullUrl, ENDPOINTS } from '../config/api';
 import { getAuthToken, handleApiError, downloadBlob } from '../utils/helpers';
 
 /**
- * PrescriptionPanel Component
- * Panel para gestionar recetas médicas con integración de inventario
- * 
- * @param {number} appointmentId - ID de la cita médica
- * @param {number} petId - ID de la mascota
- * @param {function} onSuccess - Callback al completar exitosamente
+ * PrescriptionPanel Component (Refactorizado)
+ * Permite prescripción flexible: Búsqueda en inventario O entrada manual
  */
 const PrescriptionPanel = ({ appointmentId, petId, onSuccess }) => {
-    const [inventory, setInventory] = useState([]);
-    const [search, setSearch] = useState('');
-    const [selectedItems, setSelectedItems] = useState([]);
-    const [instructions, setInstructions] = useState('');
+    // Estado de la lista de medicamentos a recetar
+    const [prescribedItems, setPrescribedItems] = useState([]);
+
+    // Estado para el formulario de agregar/buscar
+    const [entryMode, setEntryMode] = useState('manual'); // 'manual' | 'search'
+    const [searchTerm, setSearchTerm] = useState('');
+    const [inventoryResults, setInventoryResults] = useState([]);
+
+    // Formulario actual
+    const [currentItem, setCurrentItem] = useState({
+        name: '',
+        dosage: '',
+        duration: '',
+        quantity: 1,
+        instructions: ''
+    });
+
+    const [generalInstructions, setGeneralInstructions] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // Efecto para búsqueda de productos
     useEffect(() => {
-        // Cargar inventario inicial (o buscar cuando escribe)
-        const fetchInventory = async () => {
-            try {
-                const token = getAuthToken();
-                const res = await axios.get(
-                    getFullUrl(`${ENDPOINTS.INVENTORY}?search=${search}`),
-                    {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }
-                );
-                setInventory(res.data);
-            } catch (error) {
-                console.error('Error cargando inventario:', error);
-                const msg = error.response?.data?.error || error.message;
-                toast.error(`Error de inventario: ${msg}`);
-            }
-        };
-
-        const timeoutId = setTimeout(() => {
-            fetchInventory();
-        }, 300); // Debounce
-
-        return () => clearTimeout(timeoutId);
-    }, [search]);
-
-    /**
-     * Agrega un item del inventario a la receta
-     * Valida que no esté duplicado y que haya stock
-     */
-    const addItem = (item) => {
-        // Verificar si ya está
-        if (selectedItems.find(i => i.id === item.id)) {
-            toast.error('Este ítem ya está en la lista');
-            return;
-        }
-
-        // Validar stock disponible
-        if (item.stock <= 0) {
-            toast.error('No hay stock disponible de este producto');
-            return;
-        }
-
-        setSelectedItems([...selectedItems, {
-            ...item,
-            quantity: 1,
-            dosage: '1 cada 24h',
-            duration: '3 días'
-        }]);
-        toast.success(`${item.name} agregado`);
-    };
-
-    /**
-     * Elimina un item de la lista de seleccionados
-     */
-    const removeItem = (id) => {
-        setSelectedItems(selectedItems.filter(i => i.id !== id));
-    };
-
-    /**
-     * Actualiza un campo de un item seleccionado
-     */
-    const updateItem = (id, field, value) => {
-        setSelectedItems(selectedItems.map(i => {
-            if (i.id === id) {
-                // Validar cantidad vs stock
-                if (field === 'quantity') {
-                    const numValue = parseInt(value) || 1;
-                    if (numValue > i.stock) {
-                        toast.error(`Solo hay ${i.stock} unidades disponibles`);
-                        return i;
-                    }
-                    return { ...i, [field]: numValue };
+        if (entryMode === 'search' && searchTerm.length > 2) {
+            const timeoutId = setTimeout(async () => {
+                try {
+                    const token = getAuthToken();
+                    const res = await axios.get(
+                        getFullUrl(`${ENDPOINTS.INVENTORY}?search=${searchTerm}`),
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
+                    setInventoryResults(res.data);
+                } catch (error) {
+                    console.error('Error buscando:', error);
                 }
-                return { ...i, [field]: value };
-            }
-            return i;
-        }));
+            }, 300);
+            return () => clearTimeout(timeoutId);
+        } else {
+            setInventoryResults([]);
+        }
+    }, [searchTerm, entryMode]);
+
+    // Función para seleccionar del inventario
+    const selectInventoryItem = (item) => {
+        setCurrentItem({
+            ...currentItem,
+            name: item.name,
+            // Pre-llenar si hay datos, o dejar vacíos
+        });
+        setSearchTerm('');
+        setInventoryResults([]);
+        setEntryMode('manual'); // Cambiar a modo edición para completar dosis
     };
 
-    /**
-     * Envía la receta al servidor y descarga el PDF generado
-     */
-    const handleSubmit = async () => {
-        // Validaciones
-        if (selectedItems.length === 0) {
-            toast.error('Agrega al menos un medicamento');
+    // Agregar ítem a la lista temporal
+    const addItemToList = () => {
+        if (!currentItem.name || !currentItem.dosage || !currentItem.duration) {
+            toast.error('Por favor completa Nombre, Dosis y Duración');
             return;
         }
 
-        if (!petId) {
-            toast.error('No se especificó la mascota');
+        setPrescribedItems([...prescribedItems, { ...currentItem, id: Date.now() }]);
+
+        // Resetear formulario
+        setCurrentItem({
+            name: '',
+            dosage: '',
+            duration: '',
+            quantity: 1,
+            instructions: ''
+        });
+        setEntryMode('manual');
+    };
+
+    const removeItem = (id) => {
+        setPrescribedItems(prescribedItems.filter(i => i.id !== id));
+    };
+
+    // Guardar receta final
+    const handleSubmit = async () => {
+        if (prescribedItems.length === 0) {
+            toast.error('Agrega al menos un medicamento a la receta');
             return;
         }
 
         setLoading(true);
         try {
             const token = getAuthToken();
-
-            // Preparar payload con el formato correcto
             const payload = {
                 petId,
                 appointmentId,
-                instructions: instructions || 'Sin instrucciones adicionales',
-                medications: selectedItems.map(item => ({
-                    name: item.name,
-                    dosage: item.dosage,
-                    duration: item.duration,
-                    quantity: item.quantity
-                }))
+                instructions: generalInstructions || 'Seguir indicaciones detalladas para cada medicamento.',
+                medications: prescribedItems
             };
 
-            console.log('Enviando receta:', payload);
-
-            // Hacer petición esperando un blob (archivo PDF)
             const res = await axios.post(
                 getFullUrl(ENDPOINTS.PRESCRIPTIONS.CREATE),
                 payload,
@@ -143,205 +112,197 @@ const PrescriptionPanel = ({ appointmentId, petId, onSuccess }) => {
                         Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    responseType: 'blob' // Importante: esperar archivo binario
+                    responseType: 'blob'
                 }
             );
 
-            // Descargar el PDF usando la función helper
             const pdfBlob = new Blob([res.data], { type: 'application/pdf' });
-            const filename = `receta_${petId}_${Date.now()}.pdf`;
-            downloadBlob(pdfBlob, filename);
+            downloadBlob(pdfBlob, `receta_medica_${petId}.pdf`);
 
-            // Éxito
-            toast.success('✅ Receta creada y PDF descargado correctamente');
-
-            // Limpiar formulario
-            setSelectedItems([]);
-            setInstructions('');
-
+            toast.success('Receta generada correctamente');
+            setPrescribedItems([]);
+            setGeneralInstructions('');
             if (onSuccess) onSuccess();
 
         } catch (error) {
-            console.error('Error al crear receta:', error);
-
-            // Manejar errores
-            if (error.response?.data instanceof Blob) {
-                // Si el error viene como blob, convertirlo a JSON
-                try {
-                    const text = await error.response.data.text();
-                    const errorData = JSON.parse(text);
-                    toast.error(`Error: ${errorData.message || 'Error al generar la receta'}`);
-                } catch {
-                    toast.error('Error al generar la receta');
-                }
-            } else {
-                const errorMessage = handleApiError(error, 'Error al generar la receta');
-                toast.error(errorMessage);
-            }
+            console.error('Error:', error);
+            const msg = handleApiError(error, 'Error al generar receta');
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
     };
 
-    /**
-     * Calcula el total de la receta
-     */
-    const calculateTotal = () => {
-        return selectedItems.reduce((sum, item) =>
-            sum + ((item.unit_price || 0) * (item.quantity || 0)), 0
-        ).toFixed(2);
-    };
-
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <Pill className="text-emerald-600" />
-                Farmacia y Facturación
-            </h3>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-4 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
+                <h3 className="font-bold text-emerald-800 flex items-center gap-2">
+                    <Pill size={20} /> Nueva Receta Médica
+                </h3>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* COLUMNA IZQUIERDA: BUSCADOR */}
-                <div className="space-y-4">
-                    <div>
-                        <label className="text-sm font-medium text-gray-600 mb-1 block">
-                            Buscar Medicamento / Servicio
-                        </label>
-                        <input
-                            type="text"
-                            placeholder="Escribe para buscar (ej: Amoxicilina)..."
-                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
+            <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-                    <div className="h-64 overflow-y-auto border rounded-lg bg-gray-50 p-2 space-y-2">
-                        {inventory.map(item => (
-                            <div
-                                key={item.id}
-                                className={`bg-white p-3 rounded shadow-sm flex justify-between items-center transition ${item.stock > 0
-                                    ? 'hover:bg-emerald-50 cursor-pointer'
-                                    : 'opacity-50 cursor-not-allowed'
+                {/* COLUMNA IZQUIERDA: FORMULARIO DE AGREGADO */}
+                <div className="lg:col-span-5 space-y-6">
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <div className="flex gap-2 mb-4">
+                            <button
+                                onClick={() => setEntryMode('manual')}
+                                className={`flex-1 py-2 text-sm font-medium rounded-lg transition ${entryMode === 'manual' ? 'bg-white shadow text-emerald-600' : 'text-gray-500 hover:bg-gray-100'
                                     }`}
-                                onClick={() => item.stock > 0 && addItem(item)}
                             >
-                                <div>
-                                    <p className="font-bold text-gray-800">{item.name}</p>
-                                    <p className="text-xs text-gray-500">
-                                        Stock: {item.stock} | ${item.unit_price}
-                                        {item.stock === 0 && <span className="text-red-500 ml-2">(Agotado)</span>}
-                                    </p>
+                                <PenTool size={16} className="inline mr-1" /> Entrada Manual
+                            </button>
+                            <button
+                                onClick={() => setEntryMode('search')}
+                                className={`flex-1 py-2 text-sm font-medium rounded-lg transition ${entryMode === 'search' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-100'
+                                    }`}
+                            >
+                                <Search size={16} className="inline mr-1" /> Buscar Producto
+                            </button>
+                        </div>
+
+                        {entryMode === 'search' ? (
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar en inventario..."
+                                    className="w-full p-2 border rounded-lg pl-8"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    autoFocus
+                                />
+                                <Search size={16} className="absolute left-2.5 top-3 text-gray-400" />
+
+                                <div className="mt-2 max-h-40 overflow-y-auto bg-white border rounded-lg shadow-sm">
+                                    {inventoryResults.map(item => (
+                                        <div
+                                            key={item.id}
+                                            onClick={() => selectInventoryItem(item)}
+                                            className="p-2 hover:bg-emerald-50 cursor-pointer text-sm border-b last:border-0"
+                                        >
+                                            <div className="font-bold">{item.name}</div>
+                                            <div className="text-xs text-gray-500">Stock: {item.stock}</div>
+                                        </div>
+                                    ))}
+                                    {searchTerm.length > 2 && inventoryResults.length === 0 && (
+                                        <div className="p-2 text-xs text-center text-gray-400">No se encontraron productos</div>
+                                    )}
                                 </div>
-                                {item.stock > 0 && <Plus size={18} className="text-emerald-600" />}
                             </div>
-                        ))}
-                        {inventory.length === 0 && (
-                            <p className="text-center text-gray-400 py-4">
-                                No se encontraron productos.
-                            </p>
+                        ) : (
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Medicamento</label>
+                                    <input
+                                        type="text"
+                                        className="w-full p-2 border rounded-lg bg-white"
+                                        placeholder="Nombre del medicamento"
+                                        value={currentItem.name}
+                                        onChange={e => setCurrentItem({ ...currentItem, name: e.target.value })}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Dosis</label>
+                                        <input
+                                            type="text"
+                                            className="w-full p-2 border rounded-lg bg-white"
+                                            placeholder="Ej: 5ml / 1 tableta"
+                                            value={currentItem.dosage}
+                                            onChange={e => setCurrentItem({ ...currentItem, dosage: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Duración</label>
+                                        <input
+                                            type="text"
+                                            className="w-full p-2 border rounded-lg bg-white"
+                                            placeholder="Ej: Cada 8h por 5 días"
+                                            value={currentItem.duration}
+                                            onChange={e => setCurrentItem({ ...currentItem, duration: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Cantidad Total</label>
+                                    <input
+                                        type="number"
+                                        className="w-full p-2 border rounded-lg bg-white"
+                                        placeholder="Total unidades a entregar"
+                                        value={currentItem.quantity}
+                                        onChange={e => setCurrentItem({ ...currentItem, quantity: e.target.value })}
+                                    />
+                                </div>
+                                <button
+                                    onClick={addItemToList}
+                                    className="w-full py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium flex items-center justify-center gap-2"
+                                >
+                                    <Plus size={18} /> Agregar a la Receta
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
 
-                {/* COLUMNA DERECHA: LISTA SELECCIONADA */}
-                <div className="flex flex-col h-full">
-                    <div className="bg-gray-50 p-4 rounded-lg flex-1 border border-gray-200">
-                        <h4 className="font-semibold text-gray-700 mb-3 flex justify-between">
-                            Resumen de Receta
-                            <span className="text-emerald-600 font-bold flex items-center gap-1">
-                                <DollarSign size={16} /> Total: ${calculateTotal()}
-                            </span>
-                        </h4>
+                {/* COLUMNA DERECHA: LISTA DE ITEMS */}
+                <div className="lg:col-span-7 flex flex-col">
+                    <div className="flex-1 bg-white border-2 border-dashed border-gray-200 rounded-xl p-4 relative">
+                        <div className="absolute top-0 right-0 p-2 bg-emerald-100 text-emerald-700 rounded-bl-xl text-xs font-bold">
+                            VISTA PREVIA DE RECETA
+                        </div>
 
-                        {selectedItems.length === 0 ? (
-                            <div className="text-center text-gray-400 py-10">
-                                <FileText size={40} className="mx-auto mb-2 opacity-50" />
-                                <p>Selecciona productos para comenzar</p>
+                        {prescribedItems.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center text-gray-400 py-10">
+                                <FileText size={48} className="mb-2 opacity-50" />
+                                <p>No hay medicamentos agregados</p>
                             </div>
                         ) : (
-                            <div className="space-y-3 overflow-y-auto max-h-[300px] pr-1">
-                                {selectedItems.map((item) => (
-                                    <div key={item.id} className="bg-white p-3 rounded border border-gray-200 shadow-sm relative group">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="font-medium text-sm text-emerald-800">{item.name}</span>
-                                            <button
-                                                onClick={() => removeItem(item.id)}
-                                                className="text-red-400 hover:text-red-600"
-                                                title="Eliminar"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                            <div className="space-y-4 mt-6">
+                                {prescribedItems.map((item, idx) => (
+                                    <div key={item.id} className="flex gap-4 p-3 bg-gray-50 rounded-lg border border-gray-200 group">
+                                        <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center font-bold">
+                                            {idx + 1}
                                         </div>
-
-                                        <div className="grid grid-cols-3 gap-2 text-xs">
-                                            <div>
-                                                <label className="block text-gray-400">Cant.</label>
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    max={item.stock}
-                                                    className="w-full border rounded p-1"
-                                                    value={item.quantity}
-                                                    onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-gray-400">Dosis</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full border rounded p-1"
-                                                    value={item.dosage}
-                                                    onChange={(e) => updateItem(item.id, 'dosage', e.target.value)}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-gray-400">Duración</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full border rounded p-1"
-                                                    value={item.duration}
-                                                    onChange={(e) => updateItem(item.id, 'duration', e.target.value)}
-                                                />
-                                            </div>
+                                        <div className="flex-1">
+                                            <h4 className="font-bold text-gray-800">{item.name}</h4>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Dosis:</span> {item.dosage} •
+                                                <span className="font-medium ml-2">Duración:</span> {item.duration}
+                                            </p>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Cantidad a despachar: {item.quantity} unidades
+                                            </p>
                                         </div>
+                                        <button
+                                            onClick={() => removeItem(item.id)}
+                                            className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
 
-                    <div className="mt-4">
-                        <label className="text-sm font-medium text-gray-600 block mb-1">
-                            Instrucciones Generales
-                        </label>
+                    <div className="mt-6">
+                        <label className="text-sm font-bold text-gray-700 mb-2 block">Instrucciones Adicionales / Notas</label>
                         <textarea
-                            className="w-full p-2 border rounded-lg text-sm h-20 resize-none focus:ring-2 focus:ring-emerald-500 outline-none"
-                            placeholder="Ej: Dar con abundante agua, suspender si observa vómito..."
-                            value={instructions}
-                            onChange={(e) => setInstructions(e.target.value)}
+                            className="w-full p-3 border rounded-xl h-24 resize-none focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50"
+                            placeholder="Recomendaciones generales, dieta, cuidados, etc..."
+                            value={generalInstructions}
+                            onChange={e => setGeneralInstructions(e.target.value)}
                         />
                     </div>
 
                     <button
                         onClick={handleSubmit}
-                        disabled={loading || selectedItems.length === 0}
-                        className={`mt-4 w-full py-3 rounded-lg font-bold text-white shadow-md transition-all flex justify-center items-center gap-2
-                            ${loading || selectedItems.length === 0
-                                ? 'bg-gray-300 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 hover:shadow-lg'
-                            }`}
+                        disabled={loading || prescribedItems.length === 0}
+                        className="mt-6 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                        {loading ? (
-                            <>
-                                <span className="animate-spin">⏳</span>
-                                Procesando...
-                            </>
-                        ) : (
-                            <>
-                                <FileText size={18} />
-                                Finalizar Receta y Generar PDF
-                            </>
-                        )}
+                        {loading ? 'Generando PDF...' : '🖨️ Guardar e Imprimir Receta'}
                     </button>
                 </div>
             </div>
@@ -350,4 +311,3 @@ const PrescriptionPanel = ({ appointmentId, petId, onSuccess }) => {
 };
 
 export default PrescriptionPanel;
-

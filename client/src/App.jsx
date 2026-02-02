@@ -10,6 +10,8 @@ import Calendar from './pages/Calendar';
 import Pets from './pages/Pets';
 import Chat from './pages/Chat';
 import MedicalHistory from './pages/MedicalHistory';
+import PaymentsPage from './pages/PaymentsPage';
+import MedicalConsultation from './pages/MedicalConsultation';
 import LandingPage from './pages/LandingPage';
 
 /**
@@ -77,6 +79,28 @@ function App() {
                     <ProtectedRoute>
                         <Layout>
                             <MedicalHistory />
+                        </Layout>
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/payments"
+                element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <PaymentsPage />
+                        </Layout>
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/consultation/:appointmentId"
+                element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <MedicalConsultation />
                         </Layout>
                     </ProtectedRoute>
                 }

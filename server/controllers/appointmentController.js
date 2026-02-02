@@ -486,6 +486,74 @@ export const requestAppointment = async (req, res) => {
 };
 
 /**
+ * cancelAppointment - Cliente o Admin cancela cita
+ * 
+ * Permite cancelar citas si:
+ * 1. Es el dueño de la mascota (Cliente)
+ * 2. Es Admin (Veterinario)
+ */
+export const cancelAppointment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        const userRole = req.user.role;
+
+        // 1. Obtener cita
+        const aptResult = await pool.query(
+            'SELECT * FROM appointments WHERE id = $1',
+            [id]
+        );
+
+        if (aptResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Cita no encontrada'
+            });
+        }
+
+        const appointment = aptResult.rows[0];
+
+        // 2. Verificar permisos
+        if (userRole !== 'admin' && appointment.client_id !== userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'No tienes permiso para cancelar esta cita'
+            });
+        }
+
+        // 3. Validar estado actual
+        if (['cancelled', 'completed', 'rejected'].includes(appointment.status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'La cita ya se encuentra en un estado final y no puede ser cancelada nuevamente'
+            });
+        }
+
+        // 4. Cancelar cita
+        const result = await pool.query(
+            `UPDATE appointments 
+             SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
+             WHERE id = $1
+             RETURNING *`,
+            [id]
+        );
+
+        res.json({
+            success: true,
+            message: 'Cita cancelada exitosamente',
+            data: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error cancelling appointment:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al cancelar la cita'
+        });
+    }
+};
+
+/**
  * FLUJO B: createFollowUpAppointment - Veterinario agenda cita de control
  * 
  * Permite a veterinarios crear citas directamente en estado 'confirmed'.

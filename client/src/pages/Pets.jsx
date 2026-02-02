@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { PlusCircle, Edit, Trash2, Heart, Activity, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 
 export default function Pets() {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [pets, setPets] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -111,14 +113,21 @@ export default function Pets() {
         );
     }
 
+    // In return statement:
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
             {/* Header */}
             <div className="max-w-7xl mx-auto mb-8">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-800 mb-2">🐾 Mis Mascotas</h1>
-                        <p className="text-gray-600">Gestiona la información de tus compañeros peludos</p>
+                        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                            🐾 {(user?.role === 'admin' || user?.role === 'veterinario') ? 'Pacientes' : 'Mis Mascotas'}
+                        </h1>
+                        <p className="text-gray-600">
+                            {(user?.role === 'admin' || user?.role === 'veterinario')
+                                ? 'Gestión de historial clínico y pacientes'
+                                : 'Gestiona la información de tus compañeros peludos'}
+                        </p>
                     </div>
                     <button
                         onClick={() => setShowModal(true)}

@@ -21,21 +21,26 @@ export const getMedicalHistory = async (req, res) => {
         const userId = req.user.id;
         const userRole = req.user.role;
 
-        // Verificar permisos
+        console.log(`[MEDICAL] Fetching history for pet ${petId}, user ${userId} (role: ${userRole})`);
+
+        // Verificar que la mascota existe
+        const petCheck = await pool.query(
+            'SELECT id, owner_id FROM pets WHERE id = $1',
+            [petId]
+        );
+
+        if (petCheck.rows.length === 0) {
+            console.log(`[MEDICAL] Pet ${petId} not found`);
+            return res.status(404).json({
+                success: false,
+                message: 'Mascota no encontrada'
+            });
+        }
+
+        // Verificar permisos (solo si NO es admin)
         if (userRole !== 'admin') {
-            const petCheck = await pool.query(
-                'SELECT owner_id FROM pets WHERE id = $1',
-                [petId]
-            );
-
-            if (petCheck.rows.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Mascota no encontrada'
-                });
-            }
-
             if (petCheck.rows[0].owner_id !== userId) {
+                console.log(`[MEDICAL] Permission denied for user ${userId} to view pet ${petId}`);
                 return res.status(403).json({
                     success: false,
                     message: 'No tienes permiso para ver este historial médico'
@@ -43,13 +48,31 @@ export const getMedicalHistory = async (req, res) => {
             }
         }
 
-        // Obtener historial completo usando la vista
-        const result = await pool.query(
-            `SELECT * FROM v_medical_history_full 
-             WHERE pet_id = $1 
-             ORDER BY visit_date DESC, created_at DESC`,
-            [petId]
-        );
+        // Intentar obtener historial usando la vista
+        let result;
+        try {
+            result = await pool.query(
+                `SELECT * FROM v_medical_history_full 
+                 WHERE pet_id = $1 
+                 ORDER BY visit_date DESC, created_at DESC`,
+                [petId]
+            );
+        } catch (viewError) {
+            // Si la vista no existe, usar consulta directa
+            console.warn('[MEDICAL] View not found, using direct query:', viewError.message);
+            result = await pool.query(
+                `SELECT mr.*, p.name as pet_name, p.species, p.breed,
+                        u.full_name as owner_name, u.email as owner_email
+                 FROM medical_records mr
+                 JOIN pets p ON mr.pet_id = p.id
+                 JOIN users u ON p.owner_id = u.id
+                 WHERE mr.pet_id = $1
+                 ORDER BY mr.visit_date DESC, mr.created_at DESC`,
+                [petId]
+            );
+        }
+
+        console.log(`[MEDICAL] Found ${result.rows.length} records for pet ${petId}`);
 
         res.json({
             success: true,
@@ -81,7 +104,15 @@ export const createMedicalRecord = async (req, res) => {
             medications,
             weight,
             temperature,
-            notes
+            notes,
+            // New vital signs
+            heart_rate,
+            respiratory_rate,
+            mucous_membranes,
+            capillary_refill_time,
+            hydration_status,
+            abdomen_palpation,
+            lymph_nodes
         } = req.body;
 
         const vetId = req.user.id;
@@ -96,11 +127,20 @@ export const createMedicalRecord = async (req, res) => {
         const result = await pool.query(
             `INSERT INTO medical_records 
              (pet_id, appointment_id, visit_date, diagnosis, treatment, medications, 
-              weight, temperature, notes, veterinarian_name, vet_id, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP)
+              weight, temperature, notes, veterinarian_name, vet_id, 
+              heart_rate, respiratory_rate, mucous_membranes, capillary_refill_time, 
+              hydration_status, abdomen_palpation, lymph_nodes, 
+              created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 
+                     $12, $13, $14, $15, $16, $17, $18, 
+                     CURRENT_TIMESTAMP)
              RETURNING *`,
-            [petId, appointmentId || null, visitDate, diagnosis, treatment, medications,
-                weight || null, temperature || null, notes, veterinarianName, vetId]
+            [
+                petId, appointmentId || null, visitDate, diagnosis, treatment, medications,
+                weight || null, temperature || null, notes, veterinarianName, vetId,
+                heart_rate || null, respiratory_rate || null, mucous_membranes, capillary_refill_time,
+                hydration_status, abdomen_palpation, lymph_nodes
+            ]
         );
 
         res.status(201).json({
@@ -126,7 +166,11 @@ export const createMedicalRecord = async (req, res) => {
 export const updateMedicalRecord = async (req, res) => {
     try {
         const { id } = req.params;
-        const { diagnosis, treatment, medications, weight, temperature, notes } = req.body;
+        const {
+            diagnosis, treatment, medications, weight, temperature, notes,
+            heart_rate, respiratory_rate, mucous_membranes, capillary_refill_time,
+            hydration_status, abdomen_palpation, lymph_nodes
+        } = req.body;
         const userId = req.user.id;
         const userRole = req.user.role;
 
@@ -154,10 +198,19 @@ export const updateMedicalRecord = async (req, res) => {
         const result = await pool.query(
             `UPDATE medical_records 
              SET diagnosis = $1, treatment = $2, medications = $3, 
-                 weight = $4, temperature = $5, notes = $6, updated_at = CURRENT_TIMESTAMP
-             WHERE id = $7
+                 weight = $4, temperature = $5, notes = $6,
+                 heart_rate = $7, respiratory_rate = $8, mucous_membranes = $9,
+                 capillary_refill_time = $10, hydration_status = $11, 
+                 abdomen_palpation = $12, lymph_nodes = $13,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = $14
              RETURNING *`,
-            [diagnosis, treatment, medications, weight, temperature, notes, id]
+            [
+                diagnosis, treatment, medications, weight, temperature, notes,
+                heart_rate, respiratory_rate, mucous_membranes, capillary_refill_time,
+                hydration_status, abdomen_palpation, lymph_nodes,
+                id
+            ]
         );
 
         res.json({
@@ -392,6 +445,77 @@ export const linkPrescriptionToMedicalRecord = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error al vincular receta',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Obtener datos de consulta por ID de cita
+ * Si existe registro médico, lo devuelve. Si no, devuelve datos base de la cita.
+ */
+export const getConsultationByAppointment = async (req, res) => {
+    try {
+        const { appointmentId } = req.params;
+
+        // 1. Buscar si ya existe un registro médico para esta cita
+        const recordRes = await pool.query(
+            `SELECT * FROM medical_records WHERE appointment_id = $1`,
+            [appointmentId]
+        );
+
+        if (recordRes.rows.length > 0) {
+            // Ya existe la consulta, devolver datos completos
+            const consultation = recordRes.rows[0];
+
+            // Obtener datos mascota/dueño
+            const detailsRes = await pool.query(
+                `SELECT p.*, u.full_name as owner_name, u.email as owner_email
+                 FROM pets p 
+                 JOIN users u ON p.owner_id = u.id 
+                 WHERE p.id = $1`,
+                [consultation.pet_id]
+            );
+
+            return res.json({
+                success: true,
+                exists: true,
+                data: {
+                    ...consultation,
+                    pet: detailsRes.rows[0]
+                }
+            });
+        }
+
+        // 2. Si no existe, buscar datos de la cita para iniciar
+        const appointmentRes = await pool.query(
+            `SELECT a.*, p.id as pet_id, p.name as pet_name, p.species, p.breed, p.age, p.weight as current_weight, p.photo_url,
+                    u.id as client_id, u.full_name as client_name, u.email as client_email
+             FROM appointments a
+             JOIN pets p ON a.pet_id = p.id
+             JOIN users u ON a.client_id = u.id
+             WHERE a.id = $1`,
+            [appointmentId]
+        );
+
+        if (appointmentRes.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Cita no encontrada'
+            });
+        }
+
+        res.json({
+            success: true,
+            exists: false,
+            appointment: appointmentRes.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo consulta:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener datos de consulta',
             error: error.message
         });
     }

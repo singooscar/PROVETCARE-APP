@@ -1,5 +1,10 @@
 import nodemailer from 'nodemailer';
 
+// Fix for ESM import issues with nodemailer
+const createTransporter = nodemailer.createTransport || nodemailer.createTransporter || ((opts) => {
+    throw new Error('Nodemailer createTransport not found in export');
+});
+
 /**
  * NotificationService - Orquestador Centralizado de Notificaciones
  * 
@@ -22,7 +27,7 @@ class NotificationService {
     static async init() {
         if (this.transporter) return;
 
-        this.transporter = nodemailer.createTransporter({
+        this.transporter = createTransporter({
             host: process.env.EMAIL_HOST || 'smtp.gmail.com',
             port: parseInt(process.env.EMAIL_PORT) || 587,
             secure: false,
